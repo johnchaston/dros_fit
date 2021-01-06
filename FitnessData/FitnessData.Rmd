@@ -1,0 +1,2032 @@
+---
+title: "Tutorial"
+output: learnr::tutorial
+runtime: shiny_prerendered
+---
+
+
+## start 
+```{r setup, include=FALSE}
+library(learnr)
+#knitr::opts_chunk$set(echo = FALSE)
+
+#library(chron)
+library(readxl)
+#library(reshape2)
+library(ggplot2)
+library(cowplot)
+library(dunn.test)
+library(rcompanion)
+#library(splitstackshape)
+#library(coxme)
+#library(survival)
+library(multcomp)
+library(dplyr)
+library(survminer)
+library(tidyr)
+library(readr)
+library(MAGNAMWAR)
+
+
+g_legend <- function(a.gplot){ 
+	tmp <- ggplot_gtable(ggplot_build(a.gplot)) 
+	leg <- which(sapply(tmp$grobs, function(x) x$name) == "guide-box") 
+	legend <- tmp$grobs[[leg]] 
+	return(legend)} 
+
+fecundity <- readr::read_csv(file = "https://raw.githubusercontent.com/johnchaston/dros_fit/data/fecundity_markdownout.csv")
+lifespan <- readr::read_csv(file = "https://raw.githubusercontent.com/johnchaston/dros_fit/data/lifespan_markdownout.csv")
+fitness <- readr::read_csv(file = "https://raw.githubusercontent.com/johnchaston/dros_fit/data/fitness_markdownout.csv")
+lookup_code <- readr::read_csv(file = "https://raw.githubusercontent.com/johnchaston/dros_fit/data/lookup_code.csv")
+lifespan_analysis <- readr::read_csv(file = "https://raw.githubusercontent.com/johnchaston/dros_fit/data/lifespananalysis_markdownout.csv")
+fitness_formgwa <- readr::read_csv(file = "https://raw.githubusercontent.com/johnchaston/dros_fit/data/fitnessvalues_markdownout.csv")
+#groups_file <- readr::read_table(file = "https://raw.githubusercontent.com/johnchaston/dros_fit/data/groupsWP_052819.txt")
+
+p <- list(vec = list(vec_bac = c("30p","28n","11c","Ax","Gno","4d","35u","15h","2b","75o","1a","3c","13g","70j","71k","16i"),
+                                vec_atmut = c("SDR","PVEC","GDH","GNDH"),
+                                vec_ecmut = c("7636","10862")
+                                ),
+          group = list("group_bac","group_atmut","group_ecmut"))
+
+total_fitness1 <- fitness %>% 
+  filter(!trt%in%c("Gno-17","1a-14","16i-16","16i-19","16i-12","16i-18","35u-18") & !date3 %in% c(35,36)) %>%
+  group_by(trt,vial) %>%
+  summarize(mean_fec = sum(fecundity)) %>% 
+  filter(vial %in% p$vec$vec_bac)
+
+p <- list(vec = list(vec_bac = c("28n","30p","11c","Gno","4d","35u","Ax","2b","13g","15h","75o","3c","1a","70j","71k","16i"),
+                                vec_atmut = c("SDR","PVEC","GDH","GNDH"),
+                                vec_ecmut = c("7636","10862")
+                                ),
+          group = list("group_bac","group_atmut","group_ecmut")
+          )
+
+```
+
+## Figure 1
+### Figure 1A 
+```{r Figure_1A, exercise=F, warning = F, message = F}
+
+  ## take the proper subset of data
+atrc <- fecundity %>% 
+  filter(vial%in%c("35u","30p","4d","11c","28n","2b","71k","1a","75o","3c","70j","15h","16i","13g","Gno","Ax")) %>% 
+  filter(!is.na(fecundity)) %>% 
+  filter(fecundity!="NaN") %>% 
+  droplevels()
+
+  ## adjust levels to maintain plot order
+atrc$vial <- factor(atrc$vial, levels = c("35u","30p","4d","11c","28n","1a","71k","2b","75o","3c","70j","15h","16i","13g","Gno","Ax"))
+
+  ## build vectors for plot shading
+plot_colors <- c("red","red","red","red","red","blue","blue","blue","blue","blue","blue","green","green","purple","magenta","black")
+plot_lines <- c("solid","longdash","dotted","dotdash","dashed","solid","longdash","dotted","dotdash","dashed","twodash","solid","longdash","solid","solid","solid")
+
+  ## make the plot
+ggplot(atrc, aes(x = date3, y=fecundity, group = vial, col = vial, fill = vial, linetype = vial)) + 
+  	geom_smooth(aes(y = fecundity, linetype = vial), alpha = 0.05, size = .5) +
+    scale_color_manual(values = plot_colors, name = NULL, labels = c(expression(italic(A.~aceti)),expression(italic(A.~pasteurianus)),expression(italic(A.~pomorum)~DmCS),expression(italic(A.~tropicalis)~DmCS),expression(italic(A.~tropicalis)~NBRC),expression(italic(L.~brevis)~DmCS),expression(italic(L.~brevis)~gravesensis),expression(italic(L.~plantarum)~DmCS),expression(italic(L.~plantarum)~WCFS1),expression(italic(L.~fructivorans)~DmCS),expression(italic(L.~fructivorans)~KCTC),expression(italic(E.~coli)),expression(italic(P.~putida)),expression(italic(B.~subtilis)),'5-species','Axenic')) + 
+   scale_fill_manual(values = plot_colors, name = NULL,labels = c(expression(italic(A.~aceti)),expression(italic(A.~pasteurianus)),expression(italic(A.~pomorum)~DmCS),expression(italic(A.~tropicalis)~DmCS),expression(italic(A.~tropicalis)~NBRC),expression(italic(L.~brevis)~DmCS),expression(italic(L.~brevis)~gravesensis),expression(italic(L.~plantarum)~DmCS),expression(italic(L.~plantarum)~WCFS1),expression(italic(L.~fructivorans)~DmCS),expression(italic(L.~fructivorans)~KCTC),expression(italic(E.~coli)),expression(italic(P.~putida)),expression(italic(B.~subtilis)),'5-species','Axenic')) + 
+    scale_linetype_manual(values = plot_lines,name = NULL,labels = c(expression(italic(A.~aceti)),expression(italic(A.~pasteurianus)),expression(italic(A.~pomorum)~DmCS),expression(italic(A.~tropicalis)~DmCS),expression(italic(A.~tropicalis)~NBRC),expression(italic(L.~brevis)~DmCS),expression(italic(L.~brevis)~gravesensis),expression(italic(L.~plantarum)~DmCS),expression(italic(L.~plantarum)~WCFS1),expression(italic(L.~fructivorans)~DmCS),expression(italic(L.~fructivorans)~KCTC),expression(italic(E.~coli)),expression(italic(P.~putida)),expression(italic(B.~subtilis)),'5-species','Axenic')) + 
+    ylab("female fecundity per day") +
+    xlab("time (d)") +
+    guides(fill = guide_legend(ncol = 3, byrow=T), color = guide_legend(ncol = 3, byrow=T), linetype = guide_legend(ncol = 3, byrow=T)) +
+    theme_cowplot() + 
+    theme(legend.position = "none", legend.text.align = 0,legend.key.width = unit(.5,"in"), legend.text = element_text(size = 18), axis.text = element_text(size = 10),axis.title = element_text(size = 12),legend.justification = "center")
+
+## make the legend
+ ## take the proper subset of data
+atrc <- fecundity %>% 
+  filter(vial%in%c("35u","30p","4d","11c","28n","2b","71k","1a","75o","3c","70j","15h","16i","13g","Gno","Ax")) %>% 
+  filter(!is.na(fecundity)) %>% 
+  filter(fecundity!="NaN") %>% 
+  droplevels()
+
+  ## adjust levels to maintain plot order
+atrc$vial <- factor(atrc$vial, levels = c("35u","30p","4d","11c","28n","1a","71k","2b","75o","3c","70j","15h","16i","13g","Gno","Ax"))
+
+  ## build vectors for plot shading
+plot_colors <- c("red","red","red","red","red","blue","blue","blue","blue","blue","blue","green","green","purple","magenta","black")
+plot_lines <- c("solid","longdash","dotted","dotdash","dashed","solid","longdash","dotted","dotdash","dashed","twodash","solid","longdash","solid","solid","solid")
+
+plot(g_legend(ggplot(atrc, aes(x = date3, y=fecundity, group = vial, col = vial, fill = vial, linetype = vial)) +
+    geom_smooth(aes(y = fecundity, linetype = vial), alpha = 0.07) +
+    scale_color_manual(values = plot_colors, name = NULL, labels = c(expression(italic(A.~aceti)),expression(italic(A.~pasteurianus)),expression(italic(A.~pomorum)~DmCS),expression(italic(A.~tropicalis)~DmCS),expression(italic(A.~tropicalis)~NBRC),expression(italic(L.~brevis)~DmCS),expression(italic(L.~brevis)~gravesensis),expression(italic(L.~plantarum)~DmCS),expression(italic(L.~plantarum)~WCFS1),expression(italic(L.~fructivorans)~DmCS),expression(italic(L.~fructivorans)~KCTC),expression(italic(E.~coli)),expression(italic(P.~putida)),expression(italic(B.~subtilis)),'5-species','Axenic')) +
+   scale_fill_manual(values = plot_colors, name = NULL,labels = c(expression(italic(A.~aceti)),expression(italic(A.~pasteurianus)),expression(italic(A.~pomorum)~DmCS),expression(italic(A.~tropicalis)~DmCS),expression(italic(A.~tropicalis)~NBRC),expression(italic(L.~brevis)~DmCS),expression(italic(L.~brevis)~gravesensis),expression(italic(L.~plantarum)~DmCS),expression(italic(L.~plantarum)~WCFS1),expression(italic(L.~fructivorans)~DmCS),expression(italic(L.~fructivorans)~KCTC),expression(italic(E.~coli)),expression(italic(P.~putida)),expression(italic(B.~subtilis)),'5-species','Axenic')) +
+    scale_linetype_manual(values = plot_lines,name = NULL,labels = c(expression(italic(A.~aceti)),expression(italic(A.~pasteurianus)),expression(italic(A.~pomorum)~DmCS),expression(italic(A.~tropicalis)~DmCS),expression(italic(A.~tropicalis)~NBRC),expression(italic(L.~brevis)~DmCS),expression(italic(L.~brevis)~gravesensis),expression(italic(L.~plantarum)~DmCS),expression(italic(L.~plantarum)~WCFS1),expression(italic(L.~fructivorans)~DmCS),expression(italic(L.~fructivorans)~KCTC),expression(italic(E.~coli)),expression(italic(P.~putida)),expression(italic(B.~subtilis)),'5-species','Axenic')) +
+ # coord_cartesian(ylim = c(0,0.75)) +
+    ylab("female fecundity per day") +
+    xlab("days") +
+    guides(fill = guide_legend(ncol = 1, byrow=T), color = guide_legend(ncol = 1, byrow=T), linetype = guide_legend(ncol = 1, byrow=T)) +
+    theme_cowplot() +
+    theme(legend.position = "right", legend.text.align = 0, legend.text = element_text(size = 10), axis.text = element_text(size = 12),axis.title = element_text(size = 14),legend.justification = "left", legend.key.width = unit(x = .4, units = "in"),legend.background = element_rect(fill = "white"), strip.background = element_rect(fill = "white"))
+)
+)
+```
+
+### Figure 1B
+```{r Figure_1B, exercise=F, warning = F, message = F}
+
+total_fitness1 <- fitness %>% 
+  filter(!trt%in%c("Gno-17","1a-14","16i-16","16i-19","16i-12","16i-18","35u-18") & !date3 %in% c(35,36)) %>%
+  group_by(trt,vial) %>%
+  summarize(mean_fec = sum(fecundity)) %>% 
+  filter(vial %in% p$vec$vec_bac)
+
+
+total_fitness1$vial <- factor(total_fitness1$vial, levels = c("35u","30p","4d","11c","28n","1a","71k","2b","75o","3c","70j","15h","16i","13g","Gno","Ax"))
+total_fitness1$vial <- plyr::revalue(total_fitness1$vial, c("35u" = "aace","30p" = "apan","4d" = "apoc","11c"="atrc", "28n"="atrn","1a" = "lbrc","71k" = "lbga","2b" = "lplc", "75o" = "lplw","3c" = "lfrc","70j" = "lfrk","15h" = "ecok", "16i" = "pput","13g" = "bsub","Ax" = "ax","Gno" = "gno"))
+
+
+print("N per treatment")
+data.frame(table(total_fitness1$vial)) %>%
+  full_join(lookup_code, by = c("Var1" = "code1")) %>%
+  dplyr::select(fullname,Freq)
+
+print("KW test")
+def <- kruskal.test(mean_fec ~ vial, total_fitness1)
+efg <- dunn.test(total_fitness1$mean_fec,total_fitness1$vial, method = "bh", table = F)
+ghi <- cldList(comparison = efg$comparisons, p.value = efg$P.adjusted, threshold = 0.05) %>% arrange(factor(Group, levels = c("aace", "apan", "apoc","atrc", "atrn", "lbrc", "lbga", "lplc",  "lplw", "lfrc", "lfrk", "ecok",  "pput", "bsub","Ax","5sp")))
+print("BH-corrected multiple comparisons")
+ghi %>% inner_join(lookup_code, by = c("Group" = "code1")) %>% select(fullname, Group, Letter)
+
+total_fitness2 <- fitness %>% 
+  filter(!trt%in%c("Gno-17","1a-14","16i-16","16i-19","16i-12","16i-18","35u-18") & !date3 %in% c(35,36)) %>%
+  group_by(trt,vial) %>%
+  summarize(mean_fec = sum(fecundity)) %>% 
+  ungroup() %>%
+  group_by(vial) %>%
+  summarize(mean_fec2 = mean(mean_fec), sem_fec2 = sd(mean_fec)/sqrt(sum(mean_fec>-30))) %>% 
+  ungroup() %>% 
+  filter(vial %in% p$vec$vec_bac) %>%
+  mutate(vial = as.factor(as.character(vial))) %>% 
+  arrange(factor(vial, levels=c("35u","30p","4d","11c","28n","1a","71k","2b","75o","3c","70j","15h","16i","13g","Gno","Ax")))
+
+total_fitness2$vial <- factor(total_fitness2$vial, levels = c("35u","30p","4d","11c","28n","1a","71k","2b","75o","3c","70j","15h","16i","13g","Gno","Ax"))
+total_fitness2$vial <- plyr::revalue(total_fitness2$vial, c("35u" = "aace","30p" = "apan","4d" = "apoc","11c"="atrc", "28n"="atrn","1a" = "lbrc","71k" = "lbga","2b" = "lplc", "75o" = "lplw","3c" = "lfrc","70j" = "lfrk","15h" = "ecok", "16i" = "pput","13g" = "bsub","Ax" = "Ax","Gno" = "5sp"))
+plot_colors <- c("red","red","red","red","red","blue","blue","blue","blue","blue","blue","green","green","purple","magenta","black")
+plot_lines <- c("solid","longdash","dotted","dotdash","dashed","solid","longdash","dotted","dotdash","dashed","twodash","solid","longdash","solid","solid","solid")
+
+ggplot(total_fitness2, aes(x = vial, y=mean_fec2, ymax = mean_fec2+sem_fec2, ymin = mean_fec2-sem_fec2, line = vial, linetype = vial)) + 
+		geom_col(size=2.5, col=plot_colors, fill = "white", linetype = plot_lines) + 
+  geom_errorbar(width = 0.5, linetype = "solid") + 
+  	theme_cowplot() +
+	  annotate(geom="text", x=c(1:length(table(list(total_fitness2$vial)))), y= c(total_fitness2$mean_fec2 + total_fitness2$sem_fec2+3), label = ghi$Letter, color = plot_colors, size=6, parse=T, hjust = 0,fill=NA, label.size=0, angle=90) + 
+  ylab("lifetime fecundity per female") +
+  xlab("treatment") +
+  theme(text = element_text(size=12),
+        axis.text.x = element_text(angle = 90))
+```
+
+### Figure 1C
+```{r Figure_1C, fig.height=5, fig.width=5, message=FALSE, warning=FALSE, exercise=F}
+
+test_ls <- lifespan_analysis %>% 
+  filter(treatment %in% c(p$vec$vec_bac)) %>%
+  mutate(exp = as.factor(as.character(start_day))) %>%
+  mutate(treatment = as.factor(as.character(treatment))) %>%
+  droplevels()
+
+print("N per treatment")
+data.frame(table(test_ls$treatment)) %>%
+  inner_join(lookup_code, by = c("Var1" = "code2")) %>%
+  dplyr::select(fullname,Freq)
+
+test_ls$treatment <- factor(test_ls$treatment, levels = c("35u","30p","4d","11c","28n","1a","71k","2b","75o","3c","70j","15h","16i","13g","Gno","Ax"))
+test_ls$treatment <- plyr::revalue(test_ls$treatment, c("35u" = "aace","30p" = "apan","4d" = "apoc","11c"="atrc", "28n"="atrn","1a" = "lbrc","71k" = "lbga","2b" = "lplc", "75o" = "lplw","3c" = "lfrc","70j" = "lfrk","15h" = "ecok", "16i" = "pput","13g" = "bsub","Ax" = "Ax","Gno" = "5sp"))
+
+test_ls$S<-Surv(test_ls$time,test_ls$event)
+
+  ## log rank test
+print("Log rank test results")
+survdiff(S ~ treatment, data = test_ls)
+
+  ## pairwise log rank test results
+print("BH-corrected pairwise Log rank test results")
+model_all <- pairwise_survdiff(S ~ treatment, data = test_ls, p.adjust.method = "BH")
+x <- test_ls$treatment
+levs <- levels(x)
+y <- Surv(test_ls$time, test_ls$event)
+lvl_order <- levels(x)[order(tapply(as.numeric(y)[1:length(x)], 
+                                        x, mean))]
+
+comps <- as_tibble(model_all$p.value, rownames="row") %>% 
+  pivot_longer(-row, names_to="col", values_to="p") %>% 
+  na.omit()
+comps %>% inner_join(lookup_code, by = c("row" = "code1")) %>% inner_join(lookup_code, by = c("col" = "code1")) %>% select(Comp1 = fullname.x, Comp2 = fullname.y, p)
+
+  ## clds
+print("Compact letter displays")
+mycomps <- as.matrix(comps[,1:2])
+signif <- comps$p < .05
+
+clds <- multcomp:::insert_absorb(signif, 
+                         decreasing=FALSE, 
+                         comps=mycomps, 
+                         lvl_order=lvl_order)
+
+print(clds)
+
+name_val <- c(clds$Letters[names(clds$Letters) == c("aace")],
+              clds$Letters[names(clds$Letters) == c("apan")],
+              clds$Letters[names(clds$Letters) == c("apoc")],
+              clds$Letters[names(clds$Letters) == c("atrc")],
+              clds$Letters[names(clds$Letters) == c("atrn")],
+              clds$Letters[names(clds$Letters) == c("lbrc")],
+              clds$Letters[names(clds$Letters) == c("lbga")],
+              clds$Letters[names(clds$Letters) == c("lplc")],
+              clds$Letters[names(clds$Letters) == c("lplw")],
+              clds$Letters[names(clds$Letters) == c("lfrc")],
+              clds$Letters[names(clds$Letters) == c("lfrk")],
+              clds$Letters[names(clds$Letters) == c("ecok")],
+              clds$Letters[names(clds$Letters) == c("pput")],
+              clds$Letters[names(clds$Letters) == c("bsub")],
+              clds$Letters[names(clds$Letters) == c("5sp")],
+              clds$Letters[names(clds$Letters) == c("Ax")]
+)
+
+  ## coloring
+plot_colors <- c("red","blue","blue","blue","red","black","magenta")
+plot_lines <- c("solid","solid","dashed","dotted","dashed","solid","solid")
+plot_colors <- c("red","red","red","red","red","blue","blue","blue","blue","blue","blue","green","green","purple","magenta","black")
+plot_lines <- c("solid","longdash","dotted","dotdash","dashed","solid","longdash","dotted","dotdash","dashed","twodash","solid","longdash","solid","solid","solid")
+
+annot_val <- test_ls %>% group_by(treatment, event) %>% summarize(total = dplyr::n()) %>% reshape2::dcast(formula = treatment ~ event, value.var = "total") %>% mutate(percent = 1-(`1`/(`0`+`1`))) %>% dplyr::select(percent) %>% unlist() %>% unname()
+annot_name <- test_ls %>% group_by(treatment, event) %>% summarize(total = dplyr::n()) %>% reshape2::dcast(formula = treatment ~ event, value.var = "total") %>% mutate(percent = 1-(`1`/(`0`+`1`))) %>% dplyr::select(treatment) %>% unlist() %>% unname()
+
+  ## revalue so the CLDs match up with the ends of the bars
+annot_val[14] <- .82 # bsub
+annot_val[2] <- .51 # apan
+annot_val[15] <- .47 # 5sp
+annot_val[7] <- .37 #  lbga
+annot_val[8] <- .706 # lplc
+annot_val[6] <- .435 # lbrc
+annot_val[10] <- .405 # lfrc
+annot_val[3] <- .28 # atrc
+annot_val[13] <- .06
+annot_val[13] <- .06
+annot_val[11] <- .66 ## lfrk
+annot_val[16] <- .62
+
+plot(survfit(S ~ treatment, test_ls),     xlim = c(10,41),     col=plot_colors,     lty=plot_lines,     lwd=1.75,    xlab= "time(d)",     ylab="fractional survival",     cex.lab=1,     cex.axis=1.1,      bty = "n")
+for(i in 1:length(table(list(test_ls$treatment)))) {
+  legend(x = 36, y = annot_val[i], legend = name_val[i], text.col = plot_colors[i], bty = "n", xjust = 0, yjust = .5, cex=1)#
+}
+
+  ## take the proper subset of data
+atrc <- fecundity %>% 
+  filter(vial%in%c("35u","30p","4d","11c","28n","2b","71k","1a","75o","3c","70j","15h","16i","13g","Gno","Ax")) %>% 
+  filter(!is.na(fecundity)) %>% 
+  filter(fecundity!="NaN") %>% 
+  droplevels()
+
+  ## adjust levels to maintain plot order
+atrc$vial <- factor(atrc$vial, levels = c("35u","30p","4d","11c","28n","1a","71k","2b","75o","3c","70j","15h","16i","13g","Gno","Ax"))
+
+  ## build vectors for plot shading
+plot_colors <- c("red","red","red","red","red","blue","blue","blue","blue","blue","blue","green","green","purple","magenta","black")
+plot_lines <- c("solid","longdash","dotted","dotdash","dashed","solid","longdash","dotted","dotdash","dashed","twodash","solid","longdash","solid","solid","solid")
+
+plot(g_legend(ggplot(atrc, aes(x = date3, y=fecundity, group = vial, col = vial, fill = vial, linetype = vial)) +
+    geom_smooth(aes(y = fecundity, linetype = vial), alpha = 0.07) +
+    scale_color_manual(values = plot_colors, name = NULL, labels = c(expression(italic(A.~aceti)),expression(italic(A.~pasteurianus)),expression(italic(A.~pomorum)~DmCS),expression(italic(A.~tropicalis)~DmCS),expression(italic(A.~tropicalis)~NBRC),expression(italic(L.~brevis)~DmCS),expression(italic(L.~brevis)~gravesensis),expression(italic(L.~plantarum)~DmCS),expression(italic(L.~plantarum)~WCFS1),expression(italic(L.~fructivorans)~DmCS),expression(italic(L.~fructivorans)~KCTC),expression(italic(E.~coli)),expression(italic(P.~putida)),expression(italic(B.~subtilis)),'5-species','Axenic')) +
+   scale_fill_manual(values = plot_colors, name = NULL,labels = c(expression(italic(A.~aceti)),expression(italic(A.~pasteurianus)),expression(italic(A.~pomorum)~DmCS),expression(italic(A.~tropicalis)~DmCS),expression(italic(A.~tropicalis)~NBRC),expression(italic(L.~brevis)~DmCS),expression(italic(L.~brevis)~gravesensis),expression(italic(L.~plantarum)~DmCS),expression(italic(L.~plantarum)~WCFS1),expression(italic(L.~fructivorans)~DmCS),expression(italic(L.~fructivorans)~KCTC),expression(italic(E.~coli)),expression(italic(P.~putida)),expression(italic(B.~subtilis)),'5-species','Axenic')) +
+    scale_linetype_manual(values = plot_lines,name = NULL,labels = c(expression(italic(A.~aceti)),expression(italic(A.~pasteurianus)),expression(italic(A.~pomorum)~DmCS),expression(italic(A.~tropicalis)~DmCS),expression(italic(A.~tropicalis)~NBRC),expression(italic(L.~brevis)~DmCS),expression(italic(L.~brevis)~gravesensis),expression(italic(L.~plantarum)~DmCS),expression(italic(L.~plantarum)~WCFS1),expression(italic(L.~fructivorans)~DmCS),expression(italic(L.~fructivorans)~KCTC),expression(italic(E.~coli)),expression(italic(P.~putida)),expression(italic(B.~subtilis)),'5-species','Axenic')) +
+ # coord_cartesian(ylim = c(0,0.75)) +
+    ylab("female fecundity per day") +
+    xlab("days") +
+    guides(fill = guide_legend(ncol = 1, byrow=T), color = guide_legend(ncol = 1, byrow=T), linetype = guide_legend(ncol = 1, byrow=T)) +
+    theme_cowplot() +
+    theme(legend.position = "right", legend.text.align = 0, legend.text = element_text(size = 10), axis.text = element_text(size = 12),axis.title = element_text(size = 14),legend.justification = "left", legend.key.width = unit(x = .4, units = "in"),legend.background = element_rect(fill = "white"), strip.background = element_rect(fill = "white"))
+)
+)
+```
+
+### Figure 1D
+```{r Figure_1D, exercise=F, warning = F, message = F}
+
+  ## this code is derived from loops used for supplemental figures, so in some cases it looks like it has more variables than it needs
+
+  #print 1 plot with  the same survival in each line. each line is the age class that was permuted for survival
+q = 1
+xgroup = unlist(p$group[q])
+subset_vec = unlist(unname(p$vec[q]))
+rangevals <- c(1)
+m <- rangevals
+n = 1
+eigens <- data.frame(vial = factor(), trt = character(), exp = factor(), fitness = numeric(), mod_death = numeric())
+eigenvalue_df <- data.frame(vial = character(), trt = character(), exp = factor(), fitness = numeric())
+mod = n
+age_class = m
+
+subfitness <- fitness %>% filter(vial %in% subset_vec)
+
+for(i in names(table(list(subfitness$trt)))) {
+  submat <- fitness %>% 
+    filter(trt==i) %>% 
+    filter(date3 == min(date3)) %>% 
+    mutate(date3 = 0) %>%
+    mutate(fecundity = 0) %>%
+    rbind(fitness %>% 
+            filter(trt==i) %>% 
+            arrange(date3)
+          ) %>%
+    rbind(fitness %>%
+            filter(trt == i) %>%
+            filter(date3 == max(date3)) %>% 
+            mutate(date3 = max(date3)+1) %>%
+            mutate(fecundity = 0)
+    )
+  submat$s = 1
+  submat$f = 0
+  
+  for (j in 1:(dim(submat)[1]-1)) {
+     submat$s[j] <- (submat$cum_female[j+1] / submat$cum_female[j])
+     submat$f[j] <- submat$fecundity[j] #* submat$s[j]
+  }
+
+  leslie_mat <- matrix(data = c(unlist(submat$f[1:dim(submat)[1]])), nrow= 1)
+  if (age_class>1) {
+    for (k in 1:(age_class-1)) {
+      leslie_mat <- rbind(leslie_mat,
+                          matrix(c(rep(0,k-1),submat$s[k],rep(0,(dim(submat)[1]-k))), nrow=1)
+      )
+    } 
+  }
+  
+  for (k in age_class:min(age_class,(dim(submat)[1]-1))) {
+    leslie_mat <- rbind(leslie_mat, 
+                        matrix(c(rep(0,k-1),submat$s[k]*mod,rep(0,(dim(submat)[1]-k))), nrow=1)
+    )
+  }
+  if(age_class < (dim(submat)[1]-1)) {
+    for(k in (age_class+1):(dim(submat)[1]-1)) {
+       leslie_mat <- rbind(leslie_mat,
+                            matrix(c(rep(0,k-1),submat$s[k],rep(0,(dim(submat)[1]-k))), nrow=1)
+        )
+    }
+  }
+  
+  eigenvalue_df <- eigenvalue_df %>% rbind(data.frame(vial = as.character(i), trt = as.character(submat$vial[1]), exp = as.factor(as.character(submat$date2[1])), fitness = as.numeric(eigen(leslie_mat)$values[1])))
+
+}
+
+eigens <- eigens %>% rbind(eigenvalue_df %>% mutate(fitness = log(fitness)) %>% mutate(mod_death = (m)))
+
+e3 <- eigens
+eigens <- eigens %>% filter(trt%in%subset_vec) %>% droplevels()
+eigens$trt <- factor(eigens$trt, levels = subset_vec)
+
+efg <- dunn.test(eigens$fitness,eigens$trt, method = "bh", table = F)
+ghi <- cldList(comparison = efg$comparisons, p.value = efg$P.adjusted, threshold = 0.05, print.comp = F) %>% 
+arrange(factor(Group, levels = c("35u","3p","4d","11c","28n","1a","71k","2b","75o","3c","7j","15h","16i","13g","Gno","Ax")))
+
+eigens2 <- eigens %>% group_by(trt, mod_death) %>% summarize(meanfit = mean(fitness), sem = sd(fitness)/sqrt(sum(fitness>-1000))) %>% ungroup()
+eigens2$trt <- factor(eigens2$trt, levels = c("35u","30p","4d","11c","28n","1a","71k","2b","75o","3c","70j","15h","16i","13g","Gno","Ax"))
+eigens2 <- eigens2 %>% arrange(factor(trt, levels = c("35u","30p","4d","11c","28n","1a","71k","2b","75o","3c","70j","15h","16i","13g","Gno","Ax")))
+eigens2$trt <- plyr::revalue(eigens2$trt, c("35u" = "aace","30p" = "apan","4d" = "apoc","11c"="atrc", "28n"="atrn","1a" = "lbrc","71k" = "lbga","2b" = "lplc", "75o" = "lplw","3c" = "lfrc","70j" = "lfrk","15h" = "ecok", "16i" = "pput","13g" = "bsub","Ax" = "Ax","Gno" = "5sp"))
+
+plot_colors <- c("red","red","red","red","red","blue","blue","blue","blue","blue","blue","green","green","purple","magenta","black")
+plot_lines <- c("solid","longdash","dotted","dotdash","dashed","solid","longdash","dotted","dotdash","dashed","twodash","solid","longdash","solid","solid","solid")
+
+ggplot(eigens2, aes(x = trt, y=meanfit, ymax = meanfit+sem, ymin = meanfit-sem, col = trt, fill = trt)) + 
+  geom_col(size=2.5, col=plot_colors, fill = "white", linetype = plot_lines) + 
+  geom_errorbar(width = 0.5, linetype = "solid") + 
+  theme_cowplot() +
+  annotate(geom="text", x=c(1:length(table(list(eigens2$trt)))), y= c(eigens2$meanfit + eigens2$sem+median(eigens2$sem)), label = ghi$Letter, color = plot_colors, size=6, parse=T, hjust = 0, angle=90) + 
+  ylab("mean log fitness") +
+  xlab("treatment") +
+  coord_cartesian(ylim = c(0,2.7)) +
+  theme_cowplot() +
+  theme(axis.text.x = element_text(angle = 90),
+    legend.position = "none",
+    text = element_text(size = 12)
+    )
+```
+
+Run Figure 1D statistics
+```{r Figure_1D_stats, message=FALSE, warning=FALSE, exercise=F, paged.print=FALSE}
+
+q = 1
+xgroup = unlist(p$group[q])
+subset_vec = unlist(unname(p$vec[q]))
+rangevals <- c(1)
+m <- rangevals
+n = 1
+eigens <- data.frame(vial = factor(), trt = character(), exp = factor(), fitness = numeric(), mod_death = numeric())
+eigenvalue_df <- data.frame(vial = character(), trt = character(), exp = factor(), fitness = numeric())
+mod = n
+age_class = m
+
+subfitness <- fitness %>% filter(vial %in% subset_vec)
+
+for(i in names(table(list(subfitness$trt)))) {
+  submat <- fitness %>% 
+    filter(trt==i) %>% 
+    filter(date3 == min(date3)) %>% 
+    mutate(date3 = 0) %>%
+    mutate(fecundity = 0) %>%
+    rbind(fitness %>% 
+            filter(trt==i) %>% 
+            arrange(date3)
+          ) %>%
+    rbind(fitness %>%
+            filter(trt == i) %>%
+            filter(date3 == max(date3)) %>% 
+            mutate(date3 = max(date3)+1) %>%
+            mutate(fecundity = 0)
+    )
+  submat$s = 1
+  submat$f = 0
+  
+  for (j in 1:(dim(submat)[1]-1)) {
+     submat$s[j] <- (submat$cum_female[j+1] / submat$cum_female[j])
+     submat$f[j] <- submat$fecundity[j] #* submat$s[j]
+  }
+
+  leslie_mat <- matrix(data = c(unlist(submat$f[1:dim(submat)[1]])), nrow= 1)
+  if (age_class>1) {
+    for (k in 1:(age_class-1)) {
+      leslie_mat <- rbind(leslie_mat,
+                          matrix(c(rep(0,k-1),submat$s[k],rep(0,(dim(submat)[1]-k))), nrow=1)
+      )
+    } 
+  }
+  
+  for (k in age_class:min(age_class,(dim(submat)[1]-1))) {
+    leslie_mat <- rbind(leslie_mat, 
+                        matrix(c(rep(0,k-1),submat$s[k]*mod,rep(0,(dim(submat)[1]-k))), nrow=1)
+    )
+  }
+  if(age_class < (dim(submat)[1]-1)) {
+    for(k in (age_class+1):(dim(submat)[1]-1)) {
+       leslie_mat <- rbind(leslie_mat,
+                            matrix(c(rep(0,k-1),submat$s[k],rep(0,(dim(submat)[1]-k))), nrow=1)
+        )
+    }
+  }
+  
+  eigenvalue_df <- eigenvalue_df %>% rbind(data.frame(vial = as.character(i), trt = as.character(submat$vial[1]), exp = as.factor(as.character(submat$date2[1])), fitness = as.numeric(eigen(leslie_mat)$values[1])))
+
+}
+
+eigens <- eigens %>% rbind(eigenvalue_df %>% mutate(fitness = log(fitness)) %>% mutate(mod_death = (m)))
+
+e3 <- eigens
+eigens <- eigens %>% filter(trt%in%subset_vec) %>% droplevels()
+eigens$trt <- factor(eigens$trt, levels = subset_vec)
+
+efg <- dunn.test(eigens$fitness,eigens$trt, method = "bh", table = F)
+cldList(comparison = efg$comparisons, p.value = efg$P.adjusted, threshold = 0.05, print.comp = F) %>%
+  arrange(factor(Group, levels = c("35u","3p","4d","11c","28n","1a","71k","2b","75o","3c","7j","15h","16i","13g","Gno","Ax"))) %>%
+  inner_join(lookup_code, by = c("Group" = "code3")) %>% select(fullname, code1, Letter)
+
+
+
+
+
+```
+
+## Figure 2
+### Figure 2AC
+```{r Figure_2AC, exercise = F, warning =F, message = F, exercise.timelimit = 1000}
+
+p <- list(vec = list(vec_bac = c("28n","30p","11c","Gno","4d","35u","Ax","2b","13g","15h","75o","3c","1a","70j","71k"),
+                                vec_atmut = c("SDR","PVEC","GDH","GNDH"),
+                                vec_ecmut = c("7636","10862")
+                                ),
+          group = list("group_bac","group_atmut","group_ecmut")
+          )
+
+q = 1
+  xgroup = unlist(p$group[q])
+  subset_vec = unlist(unname(p$vec[q]))
+eigens <- data.frame(vial = factor(), trt = character(), exp = factor(), fitness = numeric(), mod_death = numeric(), permuted_val = character())
+
+  rangevals <- c(1, 0.00001)
+
+for (n in list(c(1,1))) {
+  for (m in rangevals) {
+    eigenvalue_df <- data.frame(vial = character(), trt = character(), exp = factor(), fitness = numeric())
+    distance = n
+    mod = m
+    subfitness <- fitness %>% filter(vial %in% subset_vec)
+    i = "11c-11"
+    for(i in names(table(list(subfitness$trt)))) {
+      
+      ## collect the relevant data for each Leslie matrix 
+      submat <- 
+        # make first row
+        fitness %>%  filter(trt==i) %>% filter(date3 == min(date3)) %>% mutate(date3 = 0) %>% mutate(fecundity = 0) %>% 
+        # the main matrix
+        rbind(fitness %>% filter(trt==i) %>% arrange(date3)) %>%
+        # make last row
+        rbind(fitness %>% filter(trt == i) %>% filter(date3 == max(date3)) %>%  mutate(date3 = max(date3)+1) %>% mutate(fecundity = 0))
+
+      ## set the s and f coloumns to default values
+      submat$s = 1
+      submat$f = 0
+      
+      ## calculate s and f
+      for (j in 1:(dim(submat)[1]-1)) {
+         submat$s[j] <- (submat$cum_female[j+1] / submat$cum_female[j])
+         submat$f[j] <- submat$fecundity[j] #* submat$s[j]
+      }
+
+      ## begin the leslie matrix
+      leslie_mat <- matrix(data = c(unlist(submat$f[1:dim(submat)[1]])), nrow= 1)
+      
+      ## build in the first unmodified cells 
+      if (n[1]>1) {
+        for (k in 1:(n[1]-1)) {
+          leslie_mat <- rbind(leslie_mat,
+                              matrix(c(rep(0,k-1),submat$s[k],rep(0,(dim(submat)[1]-k))), nrow=1)
+          )
+        } 
+      }
+      
+      ## build in cells that get modified by variable 'mod' from 'rangevals'
+      for (k in n[1]:min(n[2],(dim(submat)[1]-1))) {
+        leslie_mat <- rbind(leslie_mat, 
+                            matrix(c(rep(0,k-1),submat$s[k]*mod,rep(0,(dim(submat)[1]-k))), nrow=1)
+        )
+      }
+
+      ## build in the unmodified cells that occur linearly after the modified ones
+      if(n[2] < (dim(submat)[1]-1)) {
+        for(k in (n[2]+1):(dim(submat)[1]-1)) {
+           leslie_mat <- rbind(leslie_mat,
+                                matrix(c(rep(0,k-1),submat$s[k],rep(0,(dim(submat)[1]-k))), nrow=1)
+            )
+        }
+      }
+      
+      ## the matrix
+      leslie_mat
+      
+      ## calculate the first eigenvalue in the eigenvector of the Leslie matrix
+      eigenvalue_df <- eigenvalue_df %>% rbind(data.frame(vial = as.character(i), trt = as.character(submat$vial[1]), exp = as.factor(as.character(submat$date2[1])), fitness = as.numeric(eigen(leslie_mat)$values[1])))
+      
+    }
+    
+  ## add that row with the eigenvalue to a growing data frame
+  eigens <- eigens %>% rbind(eigenvalue_df %>% mutate(mod_death = (m), permuted_val = paste0(n[1],"_",n[2])))
+  }
+}
+
+for(k in names(table(list(eigens$mod_death)))) {
+
+    ## get rid of unnecessary rows  
+    eigensA <- eigens %>% filter(trt%in%subset_vec) %>% filter(permuted_val == "1_1") %>%droplevels()
+  
+  ## convert trt to a factor
+  eigensA$trt <- factor(eigensA$trt, levels = subset_vec)
+  
+  eigens2a <- eigensA %>% filter(mod_death == 1) %>% dplyr::rename(unpermuted_fitness = fitness) %>% droplevels()
+  eigens2b <- eigensA %>% filter(mod_death == k) %>% dplyr::rename(permuted_fitness = fitness) %>% droplevels()
+  
+  eigens3 <- eigens2a %>% inner_join(eigens2b, by="vial")
+  
+  cortest <- cor.test(eigens3$unpermuted_fitness, eigens3$permuted_fitness, method = "spearman", exact=F)
+    print(paste0("Correlation test between observed fitness and when fitness is calculated from ",1/as.numeric(as.character(k)),"-fold reduction in fly survival values. N = ",dim(eigens3 %>% filter(unpermuted_fitness > 0 & permuted_fitness>0))[1]))
+  print(cortest)
+  
+  colors <- data.frame(table(list(eigens3$trt.x))) %>% mutate(col = as.factor(c("red","red","red","black","purple","red","red","green",rep("blue",4),"cyan",rep("blue",2))))
+  eigens4 <- eigens3 %>% inner_join(colors, by=c("trt.x"="Var1"))
+  plotp = round(cortest$p.value,4)
+  plotrho = round(cortest$estimate,4)
+  plotlabel = paste0("p = ",plotp,"; rho = ",plotrho)
+  plot_colors <- eigens4$col
+  print(ggplot(eigens4, aes(unpermuted_fitness, permuted_fitness, color = col, fill=col)) + 
+     geom_point() +
+     scale_color_manual(values = c("black","blue","magenta","cyan","purple","red1"), name = NULL, labels = c("Axenic","LAB","B. subtilis","Gamma","5-sp","AAB")) + 
+     scale_fill_manual(values = c("black","blue","magenta","cyan","purple","red1"), name = NULL, labels = c("Axenic","LAB","B. subtilis","Gamma","5-sp","AAB")) + 
+     theme_cowplot() +
+     theme(legend.position = "bottom") +
+     xlab(paste0("observed fitness"))+
+     ylab(paste0("survival-permuted fitness"))+
+  	  annotate(geom="label", x= min(eigens4$unpermuted_fitness), y = min(eigens4$permuted_fitness), label = deparse(plotlabel),size=6, parse=T, hjust = 0, fill = NA,label.size=0) + 
+     stat_smooth(method = "lm", aes(unpermuted_fitness, permuted_fitness), inherit.aes = F)
+     
+)
+
+}
+```
+
+### Figure 2BD
+```{r Figure_2BD, exercise = F, warning =F, message = F, exercise.timelimit = 1000}
+
+p <- list(vec = list(vec_bac = c("28n","30p","11c","Gno","4d","35u","Ax","2b","13g","15h","75o","3c","1a","70j","71k"),
+                                vec_atmut = c("SDR","PVEC","GDH","GNDH"),
+                                vec_ecmut = c("7636","10862")
+                                ),
+          group = list("group_bac","group_atmut","group_ecmut")
+          )
+
+q = 1
+  xgroup = unlist(p$group[q])
+  subset_vec = unlist(unname(p$vec[q]))
+eigens <- data.frame(vial = factor(), trt = character(), exp = factor(), fitness = numeric(), mod_death = numeric(), permuted_val = character())
+
+  rangevals <- c(1,0.00001)
+
+for (n in list(c(1,1))) {
+  for (m in rangevals) {
+    eigenvalue_df <- data.frame(vial = character(), trt = character(), exp = factor(), fitness = numeric())
+    distance = n
+    mod = m
+    subfitness <- fitness %>% filter(vial %in% subset_vec)
+    for(i in names(table(list(subfitness$trt)))) {
+      
+      ## collect the relevant data for each Leslie matrix 
+      submat <- 
+        # make first row
+        fitness %>%  filter(trt==i) %>% filter(date3 == min(date3)) %>% mutate(date3 = 0) %>% mutate(fecundity = 0) %>% 
+        # the main matrix
+        rbind(fitness %>% filter(trt==i) %>% arrange(date3)) %>%
+        # make last row
+        rbind(fitness %>% filter(trt == i) %>% filter(date3 == max(date3)) %>%  mutate(date3 = max(date3)+1) %>% mutate(fecundity = 0))
+
+      ## set the s and f coloumns to default values
+      submat$s = 1
+      submat$f = 0
+      
+      ## calculate s and f
+      for (j in 1:(dim(submat)[1]-1)) {
+         submat$s[j] <- (submat$cum_female[j+1] / submat$cum_female[j])
+         submat$f[j] <- submat$fecundity[j] #* submat$s[j]
+      }
+
+      ## begin the leslie matrix
+      leslie_mat <- matrix(data = c(unlist(submat$f[1:dim(submat)[1]])), nrow= 1)
+      leslie_mat[(n[1]+1):(n[2]+1)] <- (leslie_mat[(n[1]+1):(n[2]+1)] * mod)
+      
+      ## build in the diagonal
+      for (k in 1:(dim(submat)[1]-1)) {
+        leslie_mat <- rbind(leslie_mat, 
+                            matrix(c(rep(0,k-1),submat$s[k],rep(0,(dim(submat)[1]-k))), nrow=1)
+        )
+      }
+
+      ## the matrix
+
+      
+      ## calculate the first eigenvalue in the eigenvector of the Leslie matrix
+      eigenvalue_df <- eigenvalue_df %>% rbind(data.frame(vial = as.character(i), trt = as.character(submat$vial[1]), exp = as.factor(as.character(submat$date2[1])), fitness = as.numeric(eigen(leslie_mat)$values[1])))
+      
+    }
+    
+  ## add that row with the eigenvalue to a growing data frame
+  eigens <- eigens %>% rbind(eigenvalue_df %>% mutate(mod_death = (m), permuted_val = paste0(n[1],"_",n[2])))
+  }
+}
+
+for(k in names(table(list(eigens$mod_death)))) {
+
+    ## get rid of unnecessary rows  
+    eigensA <- eigens %>% filter(trt%in%subset_vec) %>% filter(permuted_val == "1_1") %>%droplevels()
+  
+  ## convert trt to a factor
+  eigensA$trt <- factor(eigensA$trt, levels = subset_vec)
+  
+  eigens2a <- eigensA %>% filter(mod_death == 1) %>% rename(unpermuted_fitness = fitness) %>% droplevels()
+  eigens2b <- eigensA %>% filter(mod_death == k) %>% rename(permuted_fitness = fitness) %>% droplevels()
+
+table(eigens2a$vial)
+  eigens3 <- eigens2a %>% inner_join(eigens2b, by="vial")
+  eigens3$unpermuted_fitness
+  
+  cortest <- cor.test(eigens3$unpermuted_fitness, eigens3$permuted_fitness, method = "spearman", exact=F)
+    print(paste0("Correlation test between observed fitness and when fitness is calculated from ",1/as.numeric(as.character(k)),"-fold reduction in fecundity values. N = ",dim(eigens3 %>% filter(unpermuted_fitness > 0 & permuted_fitness>0))[1]))
+  print(cortest)
+
+  colors <- data.frame(table(list(eigens3$trt.x))) %>% mutate(col = as.factor(c("red","red","red","black","purple","red","red","green",rep("blue",4),"cyan",rep("blue",2))))
+  eigens4 <- eigens3 %>% inner_join(colors, by=c("trt.x"="Var1"))
+
+  plotp = round(cortest$p.value,4)
+  plotrho = round(cortest$estimate,4)
+  plotlabel = paste0("p = ",plotp,"; rho = ",plotrho)
+  ## build the color palette for the plot
+  plot_colors <- eigens4$col
+
+  print(ggplot(eigens4, aes(unpermuted_fitness, permuted_fitness, color = col, fill=col)) + 
+     geom_point() +
+     scale_color_manual(values = c("black","blue","magenta","cyan","purple","red1"), name = NULL, labels = c("Axenic","LAB","B. subtilis","Gamma","5-sp","AAB")) + 
+     scale_fill_manual(values = c("black","blue","magenta","cyan","purple","red1"), name = NULL, labels = c("Axenic","LAB","B. subtilis","Gamma","5-sp","AAB")) + 
+     theme_cowplot() +
+     theme(legend.position = "bottom") +
+     xlab(paste0("observed fitness"))+
+     ylab(paste0("fecundity-permuted fitness"))+
+  	  annotate(geom="label", x= min(eigens4$unpermuted_fitness), y = min(eigens4$permuted_fitness), label = deparse(plotlabel),size=6, parse=T, hjust = 0, fill = NA,label.size=0) + 
+     stat_smooth(method = "lm", aes(unpermuted_fitness, permuted_fitness), inherit.aes = F)
+)
+ 
+}
+
+```
+
+
+## Figure 3
+### Figure 3A Acetobacter
+```{r Figure_3A_Acetobacter, exercise = F, warning =F, message = F}
+
+  ## filter out the right data
+atrc <- fecundity%>% filter(vial%in%c("GDH","GNDH","PVEC","SDR"))
+
+  ## set the plot order
+atrc$vial <- factor(atrc$vial, levels = c("PVEC","SDR","GDH","GNDH"))
+
+  ## set colors
+plot_colors <- c("red","red","red","red")
+plot_lines <- c("solid","dashed","dotted","dotdash")
+
+  ## make plot
+ggplot(atrc, aes(x = date3, y=fecundity, group = vial, col = vial, fill = vial, linetype = vial)) + 
+                stat_smooth(method = NULL, level= 0.95, alpha = 0.07) +
+                scale_color_manual(values = plot_colors, 
+                                   labels = c("Empty vector","S-oxidoreductase","Glucose dehydrogenase","Gluconate dehydrogenase"), 
+                                   name = "") + 
+                scale_fill_manual(values = plot_colors, 
+                                   labels = c("Empty vector","S-oxidoreductase","Glucose dehydrogenase","Gluconate dehydrogenase"), 
+                                    name = "")+
+                scale_linetype_manual(values = plot_lines, 
+                                   labels = c("Empty vector","S-oxidoreductase","Glucose dehydrogenase","Gluconate dehydrogenase"), 
+                                    name = "") + 
+                ylab("female fecundity per day") +
+                xlab("days") +
+                theme(legend.position = "bottom") +
+                guides(fill = guide_legend(ncol = 3, byrow=T),
+                       color = guide_legend(ncol = 3, byrow=T),
+                       linetype = guide_legend(ncol = 3, byrow=T)
+                ) +
+                theme_cowplot() + 
+                theme(legend.position = "bottom", 
+                      legend.text.align = 0,
+                      legend.key.width = unit(.5,"in"), 
+                      legend.justification = "center",
+                      text = element_text(size = 12)
+                      )
+
+```
+
+### Figure 3A E. coli
+```{r Figure_3A_ecoli, exercise = F, warning =F, message = F}
+  
+  ## filter out the right data
+atrc <- fecundity%>% filter(vial%in%c("7636", "10862"))
+
+  ## define plot order
+atrc$vial <- factor(atrc$vial, levels = c("7636", "10862"))
+
+  ## set colors
+plot_colors <- c("green","green")
+plot_lines <- c("solid","dashed")
+
+  ## plot
+ggplot(atrc, aes(x = date3, y=fecundity, group = vial, col = vial, fill = vial, linetype = vial)) + 
+                stat_smooth(method = NULL, level= 0.95, alpha = 0.07) +
+                scale_color_manual(values = plot_colors, 
+                                   labels = c("WT",expression(metH)), 
+                                   name = "") + 
+                scale_fill_manual(values = plot_colors, 
+                                   labels = c("WT",expression(metH)), 
+                                    name = "")+
+                scale_linetype_manual(values = plot_lines, 
+                                   labels = c("WT",expression(metH)), 
+                                    name = "") + 
+                ylab("female fecundity per day") +
+                xlab("days") +
+                theme(legend.position = "bottom") +
+                guides(fill = guide_legend(ncol = 3, byrow=T),
+                       color = guide_legend(ncol = 3, byrow=T),
+                       linetype = guide_legend(ncol = 3, byrow=T)
+                      ) +
+                theme_cowplot() + 
+                theme(legend.position = "bottom", 
+                      legend.text.align = 0,
+                      legend.key.width = unit(.5,"in"), 
+                      legend.justification = "center",
+                      text = element_text(size = 12)
+                      )
+
+```
+
+### Figure 3B Acetobacter
+```{r Figure_3B_Acetobacter, exercise = F, warning =F, message = F}
+
+test_ls <- lifespan_analysis %>% 
+  filter(treatment %in% c(p$vec$vec_atmut)) %>%
+  mutate(exp = as.factor(as.character(start_day))) %>%
+  mutate(treatment = as.factor(as.character(treatment))) %>%
+  droplevels()
+
+levels(test_ls$treatment)
+
+print("N per treatment")
+data.frame(table(test_ls$treatment)) %>%
+  inner_join(lookup_code, by = c("Var1" = "code1")) %>%
+  dplyr::select(fullname,Freq)
+
+test_ls$treatment <- plyr::revalue(test_ls$treatment, c("PVEC"="empty vector","SDR" = "oxidoreductase","GDH" = "Glucose DeH","GNDH" = "Gluconate DeH"))
+
+test_ls$S<-Surv(test_ls$time,test_ls$event)
+
+## log rank test
+print("Log rank test results")
+survdiff(S ~ treatment, data = test_ls)
+
+## pairwise log rank test results
+print("BH-corrected pairwise Log rank test results")
+model_all <- pairwise_survdiff(S ~ treatment, data = test_ls)
+
+x <- test_ls$treatment
+levs <- levels(x)
+y <- Surv(test_ls$time, test_ls$event)
+lvl_order <- levels(x)[order(tapply(as.numeric(y)[1:length(x)], 
+                                        x, mean))]
+
+comps <- as_tibble(model_all$p.value, rownames="row") %>% 
+  pivot_longer(-row, names_to="col", values_to="p") %>% 
+  na.omit()
+mycomps <- as.matrix(comps[,1:2])
+signif <- comps$p < .05
+comps %>% inner_join(lookup_code, by = c("row" = "code2")) %>% inner_join(lookup_code, by = c("col" = "code2")) %>% select(Comp1 = fullname.x, Comp2 = fullname.y, p)
+
+print("Compact letter displays")
+clds <- multcomp:::insert_absorb(signif, 
+                         decreasing=FALSE, 
+                         comps=mycomps, 
+                         lvl_order=lvl_order)
+
+print(clds)
+
+name_val <- c("b","a","bc","c")
+plot_colors <- c("red","red","red","red")
+plot_lines <- c("dotted","dotdash","solid","dashed")
+
+annot_val <- test_ls %>% group_by(treatment, event) %>% summarize(total = dplyr::n()) %>% reshape2::dcast(formula = treatment ~ event, value.var = "total") %>% mutate(percent = 1-(`1`/(`0`+`1`))) %>% dplyr::select(percent) %>% unlist() %>% unname()
+
+#par(mai=c(1,1,.1,.1))
+plot(survfit(S ~ treatment, test_ls),     xlim = c(10,41),     col=plot_colors,     lty=plot_lines,     lwd=2,    xlab= "time(d)",     ylab="fractional survival",      bty = "n")
+for(i in 1:length(table(list(test_ls$treatment)))) {
+  legend(x = 36, y = annot_val[i], legend = name_val[i], text.col = plot_colors[i], bty = "n", xjust = 0, yjust = .5, cex=1)#
+}
+
+## print the legend
+ ## filter out the right data
+atrc <- fecundity%>% filter(vial%in%c("GDH","GNDH","PVEC","SDR"))
+
+  ## set the plot order
+atrc$vial <- factor(atrc$vial, levels = c("PVEC","SDR","GDH","GNDH"))
+
+  ## set colors
+plot_colors <- c("red","red","red","red")
+plot_lines <- c("solid","dashed","dotted","dotdash")
+
+  ## make plot
+plot(g_legend(ggplot(atrc, aes(x = date3, y=fecundity, group = vial, col = vial, fill = vial, linetype = vial)) + 
+                stat_smooth(method = NULL, level= 0.95, alpha = 0.07) +
+                scale_color_manual(values = plot_colors, 
+                                   labels = c("Empty vector","S-oxidoreductase","Glucose dehydrogenase","Gluconate dehydrogenase"), 
+                                   name = "") + 
+                scale_fill_manual(values = plot_colors, 
+                                   labels = c("Empty vector","S-oxidoreductase","Glucose dehydrogenase","Gluconate dehydrogenase"), 
+                                    name = "")+
+                scale_linetype_manual(values = plot_lines, 
+                                   labels = c("Empty vector","S-oxidoreductase","Glucose dehydrogenase","Gluconate dehydrogenase"), 
+                                    name = "") + 
+                ylab("female fecundity per day") +
+                xlab("days") +
+                theme(legend.position = "bottom") +
+                guides(fill = guide_legend(ncol = 3, byrow=T),
+                       color = guide_legend(ncol = 3, byrow=T),
+                       linetype = guide_legend(ncol = 3, byrow=T)
+                ) +
+                theme_cowplot() + 
+                theme(legend.position = "bottom", 
+                      legend.text.align = 0,
+                      legend.key.width = unit(.5,"in"), 
+                      legend.justification = "center",
+                      text = element_text(size = 12)
+                      )
+)
+)
+```
+
+### Figure 3B E. coli
+```{r Figure_3B_ecoli, exercise = F, warning =F, message = F}
+
+test_ls <- lifespan_analysis %>% 
+  filter(treatment %in% c(p$vec$vec_ecmut)) %>%
+  mutate(exp = as.factor(as.character(start_day))) %>%
+  mutate(treatment = as.factor(as.character(treatment))) %>%
+#  filter(treatment == "7636") %>%
+  droplevels()
+
+print("N per treatment")
+data.frame(table(test_ls$treatment)) %>%
+  inner_join(lookup_code, by = c("Var1" = "code1")) %>%
+  dplyr::select(fullname,Freq)
+
+test_ls$treatment <- plyr::revalue(test_ls$treatment, c("7636"="WT","10862" = "metH"))
+
+test_ls$S<-Surv(test_ls$time,test_ls$event)
+
+## log rank test
+print("Log rank test results")
+survdiff(S ~ treatment, data = test_ls)
+
+name_val <- c("a","a")
+plot_colors <- c("green","green")
+plot_lines <- c("dashed","solid")
+
+annot_val <- test_ls %>% group_by(treatment, event) %>% summarize(total = dplyr::n()) %>% reshape2::dcast(formula = treatment ~ event, value.var = "total") %>% mutate(percent = 1-(`1`/(`0`+`1`))) %>% dplyr::select(percent) %>% unlist() %>% unname()
+
+plot(survfit(S ~ treatment, test_ls),     xlim = c(10,41),     col=plot_colors,     lty=plot_lines,     lwd=2,    xlab= "time(d)",     ylab="fractional survival",     bty = "n")
+for(i in 1:length(table(list(test_ls$treatment)))) {
+  legend(x = 36, y = annot_val[i], legend = name_val[i], text.col = plot_colors[i], bty = "n", xjust = 0, yjust = .5, )#
+}
+
+## plot legend
+ 
+  ## filter out the right data
+atrc <- fecundity%>% filter(vial%in%c("7636", "10862"))
+
+  ## define plot order
+atrc$vial <- factor(atrc$vial, levels = c("7636", "10862"))
+
+  ## set colors
+plot_colors <- c("green","green")
+plot_lines <- c("solid","dashed")
+
+  ## plot
+ggplot(atrc, aes(x = date3, y=fecundity, group = vial, col = vial, fill = vial, linetype = vial)) + 
+                stat_smooth(method = NULL, level= 0.95, alpha = 0.07) +
+                scale_color_manual(values = plot_colors, 
+                                   labels = c("WT",expression(metH)), 
+                                   name = "") + 
+                scale_fill_manual(values = plot_colors, 
+                                   labels = c("WT",expression(metH)), 
+                                    name = "")+
+                scale_linetype_manual(values = plot_lines, 
+                                   labels = c("WT",expression(metH)), 
+                                    name = "") + 
+                ylab("female fecundity per day") +
+                xlab("days") +
+                theme(legend.position = "bottom") +
+                guides(fill = guide_legend(ncol = 3, byrow=T),
+                       color = guide_legend(ncol = 3, byrow=T),
+                       linetype = guide_legend(ncol = 3, byrow=T)
+                      ) +
+                theme_cowplot() + 
+                theme(legend.position = "bottom", 
+                      legend.text.align = 0,
+                      legend.key.width = unit(.5,"in"), 
+                      legend.justification = "center",
+                      text = element_text(size = 12)
+                      )
+
+
+```
+
+### Figure 3C
+#### Figure 3C Acetobacter
+```{r Figure_3C_Acetobacter, exercise = F, warning =F, message = F}
+
+total_fitness1 <- fitness %>% 
+  filter(!trt%in%c("GNDH-17","GNDH-18","GNDH-19","PVEC-17","PVEC-18","PVEC-19","SDR-17","GDH-17") & !date3 %in% c(35,36)) %>%
+  group_by(trt,vial) %>%
+  summarize(mean_fec = sum(fecundity)) %>% 
+  filter(vial %in% p$vec$vec_atmut)
+total_fitness1$vial <- factor(total_fitness1$vial, levels = p$vec$vec_atmut)
+levels(total_fitness1$vial)
+
+print("N per treatment")
+data.frame(table(total_fitness1$vial)) %>%
+  inner_join(lookup_code, by = c("Var1" = "code1")) %>%
+  dplyr::select(fullname,Freq)
+
+total_fitness1$vial <- plyr::revalue(total_fitness1$vial, c("PVEC"="empty vector","SDR" = "oxidoreductase","GDH" = "Glucose DeH","GNDH" = "Gluconate DeH"))
+
+print("KW test")
+kruskal.test(mean_fec ~ vial, total_fitness1)
+
+total_fitness2 <- fitness %>% 
+  filter(!trt%in%c("17","GNDH-18","GNDH-19","PVEC-17","PVEC-18","PVEC-19","SDR-17","GDH-17") & !date3 %in% c(35,36)) %>%
+  group_by(trt,vial) %>%
+  summarize(mean_fec = sum(fecundity)) %>% 
+  ungroup() %>%
+  group_by(vial) %>%
+  summarize(mean_fec2 = mean(mean_fec), sem_fec2 = sd(mean_fec)/sqrt(sum(mean_fec>-30))) %>% 
+  ungroup() %>% 
+  filter(vial %in% p$vec$vec_atmut) %>%
+  mutate(vial = as.factor(as.character(vial))) %>% 
+  arrange(factor(vial, levels=p$vec$vec_atmut))
+
+total_fitness2$vial <- factor(total_fitness2$vial, levels = p$vec$vec_atmut)
+total_fitness2$vial <- plyr::revalue(total_fitness2$vial, c("PVEC"="empty vector","SDR" = "oxidoreductase","GDH" = "Glucose DeH","GNDH" = "Gluconate DeH"))
+plot_colors <- c("red","red","red","red")
+plot_lines <- c("solid","dashed","dotted","dotdash")
+
+print(ggplot(total_fitness2, aes(x = vial, y=mean_fec2, ymax = mean_fec2+sem_fec2, ymin = mean_fec2-sem_fec2, line = vial, linetype = vial)) + 
+		geom_col(size=2.5, col=plot_colors, fill = "white", linetype = plot_lines) + 
+  geom_errorbar(width = 0.5, linetype = "solid") + 
+  	theme_cowplot() +
+	  annotate(geom="label", x=c(1:length(table(list(total_fitness2$vial)))), y= c(total_fitness2$mean_fec2 + total_fitness2$sem_fec2+3), label = c(rep("a",4)), color = plot_colors, size=6, parse=T, hjust = .5, fill=NA, label.size=0) + 
+  ylab("lifetime fecundity per female") +
+  xlab("treatment") +
+  theme(text = element_text(size = 12)
+        )
+)
+```
+#### Figure 3C E. coli
+```{r Figure_3C_ecoli, exercise = F, warning =F, message = F}
+
+total_fitness1 <- fitness %>% 
+  filter(!trt%in%c("GNDH-17","GNDH-18","GNDH-19","PVEC-17","PVEC-18","PVEC-19","SDR-17","GDH-17","35u-18","7636-13","7636-18") & !date3 %in% c(35,36)) %>%
+  group_by(trt,vial) %>%
+  summarize(mean_fec = sum(fecundity)) %>% 
+  filter(vial %in% p$vec$vec_ecmut)
+total_fitness1$vial <- factor(total_fitness1$vial, levels = p$vec$vec_ecmut)
+
+print("N per treatment")
+data.frame(table(total_fitness1$vial)) %>%
+  inner_join(lookup_code, by = c("Var1" = "code1")) %>%
+  dplyr::select(fullname,Freq)
+
+total_fitness1$vial <- plyr::revalue(total_fitness1$vial, c("7636"="WT","10862" = "metH"))
+
+print("Wilcoxon test")
+wilcox.test(mean_fec ~ vial, total_fitness1)
+
+total_fitness2 <- fitness %>% 
+  filter(!trt%in%c("17","7636-13","7636-18") & !date3 %in% c(35,36)) %>%
+  group_by(trt,vial) %>%
+  summarize(mean_fec = sum(fecundity)) %>% 
+  ungroup() %>%
+  group_by(vial) %>%
+  summarize(mean_fec2 = mean(mean_fec), sem_fec2 = sd(mean_fec)/sqrt(sum(mean_fec>-30))) %>% 
+  ungroup() %>% 
+  filter(vial %in% p$vec$vec_ecmut) %>%
+  mutate(vial = as.factor(as.character(vial))) %>% 
+  arrange(factor(vial, levels=p$vec$vec_ecmut))
+
+total_fitness2$vial <- factor(total_fitness2$vial, levels = p$vec$vec_ecmut)
+total_fitness2$vial <- plyr::revalue(total_fitness2$vial, c("7636"="WT","10862" = "metH"))
+plot_colors <- c("green","green")
+plot_lines <- c("solid","dashed")
+
+print(ggplot(total_fitness2, aes(x = vial, y=mean_fec2, ymax = mean_fec2+sem_fec2, ymin = mean_fec2-sem_fec2, line = vial, linetype = vial)) + 
+		geom_col(size=2.5, col=plot_colors, fill = "white", linetype = plot_lines) + 
+  geom_errorbar(width = 0.5, linetype = "solid") + 
+  	theme_cowplot() +
+	  annotate(geom="label", x=c(1:length(table(list(total_fitness2$vial)))), y= c(total_fitness2$mean_fec2 + total_fitness2$sem_fec2+3), label = c(rep("a",2)), color = plot_colors, size=6, parse=T, hjust = .5, fill=NA, label.size=0) + 
+  ylab("lifetime fecundity per female") +
+  xlab("treatment") +
+  theme(text = element_text(size = 12)
+        )
+)
+```
+
+### Figure 3D
+#### Figure 3D Acetobacter
+```{r Figure_3D_Acetobacter, exercise = F, warning =F, message = F}
+q = 2
+
+xgroup = unlist(p$group[q])
+  subset_vec = unlist(unname(p$vec[q]))
+  rangevals <- c(1)
+  n = 1
+    eigens <- data.frame(vial = factor(), trt = character(), exp = factor(), fitness = numeric(), mod_death = numeric())
+    m = 1
+    for (m in rangevals) {
+      eigenvalue_df <- data.frame(vial = character(), trt = character(), exp = factor(), fitness = numeric())
+      mod = n
+      age_class = m
+      subfitness <- fitness %>% filter(vial %in% subset_vec)
+      for(i in names(table(list(subfitness$trt)))) {
+      submat <- fitness %>% 
+        filter(trt==i) %>% 
+        filter(date3 == min(date3)) %>% 
+        mutate(date3 = 0) %>%
+        mutate(fecundity = 0) %>%
+        rbind(fitness %>% 
+                filter(trt==i) %>% 
+                arrange(date3)
+              ) %>%
+        rbind(fitness %>%
+                filter(trt == i) %>%
+                filter(date3 == max(date3)) %>% 
+                mutate(date3 = max(date3)+1) %>%
+                mutate(fecundity = 0)
+        )
+      submat$s = 1
+      submat$f = 0
+    
+      for (j in 1:(dim(submat)[1]-1)) {
+         submat$s[j] <- (submat$cum_female[j+1] / submat$cum_female[j])
+         submat$f[j] <- submat$fecundity[j] #* submat$s[j]
+      }
+      submat
+      leslie_mat <- matrix(data = c(unlist(submat$f[1:dim(submat)[1]])), nrow= 1)
+      if (age_class>1) {
+        for (k in 1:(age_class-1)) {
+          leslie_mat <- rbind(leslie_mat,
+                              matrix(c(rep(0,k-1),submat$s[k],rep(0,(dim(submat)[1]-k))), nrow=1)
+          )
+        } 
+      }
+      for (k in age_class:min(age_class,(dim(submat)[1]-1))) {
+        leslie_mat <- rbind(leslie_mat, 
+                            matrix(c(rep(0,k-1),submat$s[k]*mod,rep(0,(dim(submat)[1]-k))), nrow=1)
+        )
+      }
+      if(age_class < (dim(submat)[1]-1)) {
+        for(k in (age_class+1):(dim(submat)[1]-1)) {
+           leslie_mat <- rbind(leslie_mat,
+                                matrix(c(rep(0,k-1),submat$s[k],rep(0,(dim(submat)[1]-k))), nrow=1)
+            )
+        }
+      }
+      #print(submat)
+      #print(leslie_mat)
+      eigenvalue_df <- eigenvalue_df %>% rbind(data.frame(vial = as.character(i), trt = as.character(submat$vial[1]), exp = as.factor(as.character(submat$date2[1])), fitness = as.numeric(eigen(leslie_mat)$values[1])))
+    
+    }
+      
+      eigens <- eigens %>% rbind(eigenvalue_df %>% mutate(fitness = log(fitness)) %>% mutate(mod_death = (m)))
+    }
+    
+    eigens <- eigens %>% filter(trt%in%subset_vec) %>% droplevels()
+    eigens$trt <- factor(eigens$trt, levels = subset_vec)
+    
+    print("N per treatment")
+    print(table(eigens$trt))
+    print("KW test results")
+    kruskal.test(fitness ~ trt, eigens)
+
+    eigens2 <- eigens %>% group_by(trt, mod_death) %>% summarize(meanfit = mean(fitness), sem = sd(fitness)/sqrt(sum(fitness>-1000))) %>% ungroup()
+    eigens2$trt <- factor(eigens2$trt, levels = c("PVEC","SDR","GDH","GNDH"))
+    eigens2 <- eigens2 %>% arrange(factor(trt, levels = c("PVEC","SDR","GDH","GNDH")))
+    eigens2$trt <- plyr::revalue(eigens2$trt, c("PVEC"="empty vector","SDR" = "oxidoreductase","GDH" = "Glucose DeH","GNDH" = "Gluconate DeH"))
+
+    plot_colors <- c("red","red","red","red")
+    plot_lines <- c("solid","dashed","dotted","dotdash")
+
+ggplot(eigens2, aes(x = trt, y=meanfit, ymax = meanfit+sem, ymin = meanfit-sem, col = trt, fill = trt)) + 
+		geom_col(size=2.5, col=plot_colors, fill = "white", linetype = plot_lines) + 
+  geom_errorbar(width = 0.5, linetype = "solid", col = "red") + 
+  	theme_cowplot() +
+	  annotate(geom="text", x=c(1:length(table(list(eigens2$trt)))), y= c(eigens2$meanfit + eigens2$sem+median(eigens2$sem)*1.7), label = c(rep("a",4)), color = plot_colors, size=6, parse=T, hjust = 0.5,fill=NA, label.size=0) + 
+  ylab("mean log fitness") +
+  xlab("treatment") +
+  theme_cowplot() +
+  theme(text = element_text(size = 12),
+        legend.position = "bottom"
+        )
+
+```
+
+#### Figure 3D E. coli
+```{r Figure_3D_ecoli, exercise = F, warning =F, message = F}
+q = 3
+xgroup = unlist(p$group[q])
+subset_vec = unlist(unname(p$vec[q]))
+rangevals <- c(1)
+n = 1
+eigens <- data.frame(vial = factor(), trt = character(), exp = factor(), fitness = numeric(), mod_death = numeric())
+m = 1
+for (m in rangevals) {
+  eigenvalue_df <- data.frame(vial = character(), trt = character(), exp = factor(), fitness = numeric())
+  mod = n
+  age_class = m
+  subfitness <- fitness %>% filter(vial %in% subset_vec)
+  for(i in names(table(list(subfitness$trt)))) {
+  submat <- fitness %>% 
+    filter(trt==i) %>% 
+    filter(date3 == min(date3)) %>% 
+    mutate(date3 = 0) %>%
+    mutate(fecundity = 0) %>%
+    rbind(fitness %>% 
+            filter(trt==i) %>% 
+            arrange(date3)
+          ) %>%
+    rbind(fitness %>%
+            filter(trt == i) %>%
+            filter(date3 == max(date3)) %>% 
+            mutate(date3 = max(date3)+1) %>%
+            mutate(fecundity = 0)
+    )
+  submat$s = 1
+  submat$f = 0
+
+  for (j in 1:(dim(submat)[1]-1)) {
+     submat$s[j] <- (submat$cum_female[j+1] / submat$cum_female[j])
+     submat$f[j] <- submat$fecundity[j] #* submat$s[j]
+  }
+  submat
+  leslie_mat <- matrix(data = c(unlist(submat$f[1:dim(submat)[1]])), nrow= 1)
+  if (age_class>1) {
+    for (k in 1:(age_class-1)) {
+      leslie_mat <- rbind(leslie_mat,
+                          matrix(c(rep(0,k-1),submat$s[k],rep(0,(dim(submat)[1]-k))), nrow=1)
+      )
+    } 
+  }
+  for (k in age_class:min(age_class,(dim(submat)[1]-1))) {
+    leslie_mat <- rbind(leslie_mat, 
+                        matrix(c(rep(0,k-1),submat$s[k]*mod,rep(0,(dim(submat)[1]-k))), nrow=1)
+    )
+  }
+  if(age_class < (dim(submat)[1]-1)) {
+    for(k in (age_class+1):(dim(submat)[1]-1)) {
+       leslie_mat <- rbind(leslie_mat,
+                            matrix(c(rep(0,k-1),submat$s[k],rep(0,(dim(submat)[1]-k))), nrow=1)
+        )
+    }
+  }
+  #print(submat)
+  #print(leslie_mat)
+  eigenvalue_df <- eigenvalue_df %>% rbind(data.frame(vial = as.character(i), trt = as.character(submat$vial[1]), exp = as.factor(as.character(submat$date2[1])), fitness = as.numeric(eigen(leslie_mat)$values[1])))
+
+}
+  
+  eigens <- eigens %>% rbind(eigenvalue_df %>% mutate(fitness = log(fitness)) %>% mutate(mod_death = (m)))
+}
+
+eigens <- eigens %>% filter(trt%in%subset_vec) %>% droplevels()
+eigens$trt <- factor(eigens$trt, levels = subset_vec)
+print("N per treatment")
+print(table(eigens$trt))
+
+print("Wilcoxon test results")
+wilcox.test(fitness ~ trt, eigens)
+
+eigens2 <- eigens %>% group_by(trt, mod_death) %>% summarize(meanfit = mean(fitness), sem = sd(fitness)/sqrt(sum(fitness>-1000))) %>% ungroup()
+eigens2$trt <- factor(eigens2$trt, levels = c("7636","10862"))
+eigens2 <- eigens2 %>% arrange(factor(trt, levels = c("7636","10862")))
+eigens2$trt <- plyr::revalue(eigens2$trt, c("7636"="WT","10862" = "metH"))
+
+plot_colors <- c("green","green")
+plot_lines <- c("solid","dashed")
+
+ggplot(eigens2, aes(x = trt, y=meanfit, ymax = meanfit+sem, ymin = meanfit-sem, col = trt, fill = trt)) + 
+		geom_col(size=2.5, col=plot_colors, fill = "white", linetype = plot_lines) + 
+  geom_errorbar(width = 0.5, linetype = "solid", col = "green") + 
+  	theme_cowplot() +
+	  annotate(geom="text", x=c(1:length(table(list(eigens2$trt)))), y= c(eigens2$meanfit + eigens2$sem+median(eigens2$sem)*1.7), label = c(rep("a",2)), color = plot_colors, size=6, parse=T, hjust = 0.5,fill=NA, label.size=0) + 
+  ylab("mean fitness") +
+  xlab("treatment") +
+  theme_cowplot() +
+  theme(text = element_text(size = 12),
+        legend.position = "none"
+        )
+
+```
+
+##  Figure S1
+```{r Figure_S1, exercise = F, warning =F, message = F, eval = F, exercise.timelimit = 1000}
+p <- list(vec = list(vec_bac = c("28n","30p","11c","Gno","4d","35u","Ax","2b","13g","15h","75o","3c","1a","70j","71k"),
+                                vec_atmut = c("SDR","PVEC","GDH","GNDH"),
+                                vec_ecmut = c("7636","10862")
+                                ),
+          group = list("group_bac","group_atmut","group_ecmut")
+          )
+
+q = 1
+
+#print 1 plot with  the same survival in each line. each line is the age class that was permuted for survival
+xgroup = unlist(p$group[q])
+  subset_vec = unlist(unname(p$vec[q]))
+  rangevals = 1
+  rangevals <- c(1:7)
+  n= 0.00001
+  for (n in c(.5,.1,.05,.01,.005,.001,.0001,.00001)) {
+    eigens <- data.frame(vial = factor(), trt = character(), exp = factor(), fitness = numeric(), mod_death = numeric())
+    m = 1
+    for (m in rangevals) {
+      eigenvalue_df <- data.frame(vial = character(), trt = character(), exp = factor(), fitness = numeric())
+      mod = n
+      age_class = m
+      subfitness <- fitness %>% filter(vial %in% subset_vec)
+      for(i in names(table(list(subfitness$trt)))) {
+      submat <- fitness %>% 
+        filter(trt==i) %>% 
+        filter(date3 == min(date3)) %>% 
+        mutate(date3 = 0) %>%
+        mutate(fecundity = 0) %>%
+        rbind(fitness %>% 
+                filter(trt==i) %>% 
+                arrange(date3)
+              ) %>%
+        rbind(fitness %>%
+                filter(trt == i) %>%
+                filter(date3 == max(date3)) %>% 
+                mutate(date3 = max(date3)+1) %>%
+                mutate(fecundity = 0)
+        )
+      submat$s = 1
+      submat$f = 0
+    
+      for (j in 1:(dim(submat)[1]-1)) {
+         submat$s[j] <- (submat$cum_female[j+1] / submat$cum_female[j])
+         submat$f[j] <- submat$fecundity[j] #* submat$s[j]
+      }
+      submat
+      leslie_mat <- matrix(data = c(unlist(submat$f[1:dim(submat)[1]])), nrow= 1)
+      if (age_class>1) {
+        for (k in 1:(age_class-1)) {
+          leslie_mat <- rbind(leslie_mat,
+                              matrix(c(rep(0,k-1),submat$s[k],rep(0,(dim(submat)[1]-k))), nrow=1)
+          )
+        } 
+      }
+      for (k in age_class:min(age_class,(dim(submat)[1]-1))) {
+        leslie_mat <- rbind(leslie_mat, 
+                            matrix(c(rep(0,k-1),submat$s[k]*mod,rep(0,(dim(submat)[1]-k))), nrow=1)
+        )
+      }
+      if(age_class < (dim(submat)[1]-1)) {
+        for(k in (age_class+1):(dim(submat)[1]-1)) {
+           leslie_mat <- rbind(leslie_mat,
+                                matrix(c(rep(0,k-1),submat$s[k],rep(0,(dim(submat)[1]-k))), nrow=1)
+            )
+        }
+      }
+
+      eigenvalue_df <- eigenvalue_df %>% rbind(data.frame(vial = as.character(i), trt = as.character(submat$vial[1]), exp = as.factor(as.character(submat$date2[1])), fitness = as.numeric(eigen(leslie_mat)$values[1])))
+    
+    }
+      
+      eigens <- eigens %>% rbind(eigenvalue_df %>% mutate(fitness = log(fitness)) %>% mutate(mod_death = (m)))
+    }
+    
+    eigens <- eigens %>% filter(trt%in%subset_vec) %>% droplevels()
+    eigens$trt <- factor(eigens$trt, levels = subset_vec)
+    eigens2 <- eigens %>% group_by(trt, mod_death) %>% summarize(meanfit = mean(fitness))
+    plot_colors <- colorRampPalette(c("red", "black"))
+    
+    table(list(eigens$trt))
+    
+    table(list(eigens$mod_death))
+    for(i in rangevals) {
+      cat('\n')
+      print("######################################################")
+      print(paste0("These are the statistics for age class ",i," and survival divided by ",1/n, sep = ""))
+      
+      
+      eigen_stats <- eigens %>% filter(mod_death == (i)) %>% droplevels()
+      #print(str(eigen_stats))
+      #print(i)
+      kwoutput <- try(kruskal.test(eigen_stats$fitness~ eigen_stats$trt), silent = T)
+      captured_output <- capture.output(efg <- dunn.test(eigen_stats$fitness,eigen_stats$trt, method = "bh", table = F, kw = T))
+      if(kwoutput == "Error in kruskal.test.default(numeric(0), structure(integer(0), .Label = character(0), class = \"factor\")) : \n  all observations are in the same group\n") {
+        print(paste0("chi-sq statistic not significant"))
+      } else {
+        print(paste0("chi-sq statistic: ",round(kwoutput$statistic,2)))
+        print(paste0("df: ",length(table(eigen_stats$trt))-1))
+        print(paste0("p: ",signif(kwoutput$p.value,3)))      
+      }      
+      #print(i)
+      if(sum(efg$P.adjusted<0.05)>0) {
+        ghi <- cldList(comparison = efg$comparisons, p.value = efg$P.adjusted, threshold = 0.05, print.comp = F) %>% 
+        arrange(factor(Group, levels = subset_vec))
+        try(assign(x = paste0("es",i), value = as.vector(ghi$Letter)),T)
+      } else {
+        assign(x = paste0("es",i),value = rep("a",length(subset_vec)))
+      }
+      assign(x = paste0("estats",i), 
+                   value = eigen_stats %>% 
+                     group_by(trt) %>% 
+                     summarize(mean_fitness = mean(fitness)) %>% 
+                     arrange(factor(trt, levels = subset_vec)) %>%
+                     dplyr::select(mean_fitness) %>%
+                     unlist() %>% 
+                     unname()
+            )
+    }
+
+    eigens2$trt <- plyr::revalue(eigens2$trt, c("28n" = "atrn","30p" = "apan", "11c"="atrc","Gno" = "5sp","4d" = "apoc", "35u" = "aace","Ax" = "Ax","2b" = "lplc","13g" = "bsub","15h" = "ecok","75o" = "lplw","3c" = "lfrc", "1a" = "lbrc","70j" = "lfrk", "71k" = "lbga"))
+
+   print(ggplot(eigens2, aes(x = trt, y=meanfit,group = as.factor(mod_death), col = as.factor(mod_death), fill = as.factor(mod_death))) + 
+        geom_step(aes(x = trt, y = meanfit)) + #, position = position_dodge(width = widthj), size = sizej) +
+     scale_color_manual(values = plot_colors(length(rangevals)),
+                       name = "Age class") +
+        coord_cartesian(ylim = c(-2,3)) +
+        ylab("log fitness") +
+        xlab("bacterial treatment") +
+        theme(legend.position = "bottom") +
+     guides(color = guide_legend(ncol = 5, byrow=T, reverse = T)) +
+        theme_cowplot() + 
+        theme(legend.position = "bottom", 
+              legend.text.align = 0,
+              legend.key.width = unit(.5,"in"), 
+              legend.justification = "center", 
+              text = element_text(size =12),
+              axis.text.x = element_text(angle = 90, hjust = 1)
+              ) + 
+      annotate(geom="label", x= c(1.05:(length(subset_vec)+0.05)), y= get(paste0("estats",rangevals[7]))+0.03, label = get(paste0("es",rangevals[7])),size=3, parse=T, hjust = 0, fill = NA,label.size=0)+
+      annotate(geom="label", x= c(1.05:(length(subset_vec)+0.05)), y= get(paste0("estats",rangevals[6]))+0.03, label = get(paste0("es",rangevals[6])),size=3, parse=T, hjust = 0, fill = NA,label.size=0)+
+      annotate(geom="label", x= c(1.05:(length(subset_vec)+0.05)), y= get(paste0("estats",rangevals[5]))+0.03, label = get(paste0("es",rangevals[5])),size=3, parse=T, hjust = 0, fill = NA,label.size=0)+
+          annotate(geom="label", x= c(1.05:(length(subset_vec)+0.05)), y= get(paste0("estats",rangevals[4]))+0.03, label = get(paste0("es",rangevals[4])),size=3, parse=T, hjust = 0, fill = NA,label.size=0)+
+          annotate(geom="label", x= c(1.05:(length(subset_vec)+0.05)), y= get(paste0("estats",rangevals[3]))+0.03, label = get(paste0("es",rangevals[3])),size=3, parse=T, hjust = 0, fill = NA,label.size=0)+
+          annotate(geom="label", x= c(1.05:(length(subset_vec)+0.05)), y= get(paste0("estats",rangevals[2]))+0.03, label = get(paste0("es",rangevals[2])),size=3, parse=T, hjust = 0, fill = NA,label.size=0)+
+          annotate(geom="label", x= c(1.05:(length(subset_vec)+0.05)), y= get(paste0("estats",rangevals[1]))+0.03, label = get(paste0("es",rangevals[1])),size=3, parse=T, hjust = 0, fill = NA,label.size=0)
+    )
+   # dev.off()
+}
+```
+
+## Figure S2
+```{r Figure_S2, exercise = F, warning =F, message = F, exercise.timelimit = 1000}
+
+p <- list(vec = list(vec_bac = c("28n","30p","11c","Gno","4d","35u","Ax","2b","13g","15h","75o","3c","1a","70j","71k"),
+                                vec_atmut = c("SDR","PVEC","GDH","GNDH"),
+                                vec_ecmut = c("7636","10862")
+                                ),
+          group = list("group_bac","group_atmut","group_ecmut")
+          )
+
+q = 1
+  xgroup = unlist(p$group[q])
+  subset_vec = unlist(unname(p$vec[q]))
+eigens <- data.frame(vial = factor(), trt = character(), exp = factor(), fitness = numeric(), mod_death = numeric(), permuted_val = character())
+
+  rangevals <- c(1, 0.5,0.1,0.05, 0.01, 0.005,0.001,0.0001,0.00001)
+
+for (n in list(c(1,1),c(2,2))) {
+  for (m in rangevals) {
+    eigenvalue_df <- data.frame(vial = character(), trt = character(), exp = factor(), fitness = numeric())
+    distance = n
+    mod = m
+    subfitness <- fitness %>% filter(vial %in% subset_vec)
+    i = "11c-11"
+    for(i in names(table(list(subfitness$trt)))) {
+      
+      ## collect the relevant data for each Leslie matrix 
+      submat <- 
+        # make first row
+        fitness %>%  filter(trt==i) %>% filter(date3 == min(date3)) %>% mutate(date3 = 0) %>% mutate(fecundity = 0) %>% 
+        # the main matrix
+        rbind(fitness %>% filter(trt==i) %>% arrange(date3)) %>%
+        # make last row
+        rbind(fitness %>% filter(trt == i) %>% filter(date3 == max(date3)) %>%  mutate(date3 = max(date3)+1) %>% mutate(fecundity = 0))
+
+      ## set the s and f coloumns to default values
+      submat$s = 1
+      submat$f = 0
+      
+      ## calculate s and f
+      for (j in 1:(dim(submat)[1]-1)) {
+         submat$s[j] <- (submat$cum_female[j+1] / submat$cum_female[j])
+         submat$f[j] <- submat$fecundity[j] #* submat$s[j]
+      }
+
+      ## begin the leslie matrix
+      leslie_mat <- matrix(data = c(unlist(submat$f[1:dim(submat)[1]])), nrow= 1)
+      
+      ## build in the first unmodified cells 
+      if (n[1]>1) {
+        for (k in 1:(n[1]-1)) {
+          leslie_mat <- rbind(leslie_mat,
+                              matrix(c(rep(0,k-1),submat$s[k],rep(0,(dim(submat)[1]-k))), nrow=1)
+          )
+        } 
+      }
+      
+      ## build in cells that get modified by variable 'mod' from 'rangevals'
+      for (k in n[1]:min(n[2],(dim(submat)[1]-1))) {
+        leslie_mat <- rbind(leslie_mat, 
+                            matrix(c(rep(0,k-1),submat$s[k]*mod,rep(0,(dim(submat)[1]-k))), nrow=1)
+        )
+      }
+
+      ## build in the unmodified cells that occur linearly after the modified ones
+      if(n[2] < (dim(submat)[1]-1)) {
+        for(k in (n[2]+1):(dim(submat)[1]-1)) {
+           leslie_mat <- rbind(leslie_mat,
+                                matrix(c(rep(0,k-1),submat$s[k],rep(0,(dim(submat)[1]-k))), nrow=1)
+            )
+        }
+      }
+      
+      ## the matrix
+      leslie_mat
+      
+      ## calculate the first eigenvalue in the eigenvector of the Leslie matrix
+      eigenvalue_df <- eigenvalue_df %>% rbind(data.frame(vial = as.character(i), trt = as.character(submat$vial[1]), exp = as.factor(as.character(submat$date2[1])), fitness = as.numeric(eigen(leslie_mat)$values[1])))
+      
+    }
+    
+  ## add that row with the eigenvalue to a growing data frame
+  eigens <- eigens %>% rbind(eigenvalue_df %>% mutate(mod_death = (m), permuted_val = paste0(n[1],"_",n[2])))
+  }
+}
+
+for(k in names(table(list(eigens$mod_death)))) {
+
+    ## get rid of unnecessary rows  
+    eigensA <- eigens %>% filter(trt%in%subset_vec) %>% filter(permuted_val == "1_1") %>%droplevels()
+  
+  ## convert trt to a factor
+  eigensA$trt <- factor(eigensA$trt, levels = subset_vec)
+  
+  eigens2a <- eigensA %>% filter(mod_death == 1) %>% dplyr::rename(unpermuted_fitness = fitness) %>% droplevels()
+  eigens2b <- eigensA %>% filter(mod_death == k) %>% dplyr::rename(permuted_fitness = fitness) %>% droplevels()
+  
+  eigens3 <- eigens2a %>% inner_join(eigens2b, by="vial")
+  
+  cortest <- cor.test(eigens3$unpermuted_fitness, eigens3$permuted_fitness, method = "spearman", exact=F)
+    print(paste0("Correlation test between observed fitness and when fitness is calculated from ",1/as.numeric(as.character(k)),"-fold reduction in fly survival values. N = ",dim(eigens3 %>% filter(unpermuted_fitness > 0 & permuted_fitness>0))[1]))
+  print(cortest)
+  
+  colors <- data.frame(table(list(eigens3$trt.x))) %>% mutate(col = as.factor(c("red","red","red","black","purple","red","red","green",rep("blue",4),"cyan",rep("blue",2))))
+  eigens4 <- eigens3 %>% inner_join(colors, by=c("trt.x"="Var1"))
+
+  plotp = round(cortest$p.value,4)
+  plotrho = round(cortest$estimate,4)
+  plotlabel = paste0("p = ",plotp,"; rho = ",plotrho)
+  plot_colors <- eigens4$col
+  print(ggplot(eigens4, aes(unpermuted_fitness, permuted_fitness, color = col, fill=col)) + 
+     geom_point() +
+     scale_color_manual(values = c("black","blue","magenta","cyan","purple","red1"), name = NULL, labels = c("Axenic","LAB","B. subtilis","Gamma","5-sp","AAB")) + 
+     scale_fill_manual(values = c("black","blue","magenta","cyan","purple","red1"), name = NULL, labels = c("Axenic","LAB","B. subtilis","Gamma","5-sp","AAB")) + 
+     theme_cowplot() +
+     theme(legend.position = "bottom") +
+     xlab(paste0("observed fitness"))+
+     ylab(paste0("survival-permuted fitness"))+
+  	  annotate(geom="label", x= min(eigens4$unpermuted_fitness), y = min(eigens4$permuted_fitness), label = deparse(plotlabel),size=6, parse=T, hjust = 0, fill = NA,label.size=0) + 
+     stat_smooth(method = "lm", aes(unpermuted_fitness, permuted_fitness), inherit.aes = F)
+     
+)
+
+}
+```
+
+## Figure S3
+```{r Figure_S3, exercise = F, warning =F, message = F, exercise.timelimit = 1000}
+
+p <- list(vec = list(vec_bac = c("28n","30p","11c","Gno","4d","35u","Ax","2b","13g","15h","75o","3c","1a","70j","71k"),
+                                vec_atmut = c("SDR","PVEC","GDH","GNDH"),
+                                vec_ecmut = c("7636","10862")
+                                ),
+          group = list("group_bac","group_atmut","group_ecmut")
+          )
+
+q = 1
+  xgroup = unlist(p$group[q])
+  subset_vec = unlist(unname(p$vec[q]))
+eigens <- data.frame(vial = factor(), trt = character(), exp = factor(), fitness = numeric(), mod_death = numeric(), permuted_val = character())
+
+  rangevals <- c(1, .5,.1,.05, .01, 0.005,.001,.0005,0.0001,0.00001)
+
+#  rangevals <- c(1,0.00001)
+  
+  ## make up the two comparisons
+
+for (n in list(c(1,1),c(2,7))) {
+  for (m in rangevals) {
+    eigenvalue_df <- data.frame(vial = character(), trt = character(), exp = factor(), fitness = numeric())
+    distance = n
+    mod = m
+    subfitness <- fitness %>% filter(vial %in% subset_vec)
+    for(i in names(table(list(subfitness$trt)))) {
+      
+      ## collect the relevant data for each Leslie matrix 
+      submat <- 
+        # make first row
+        fitness %>%  filter(trt==i) %>% filter(date3 == min(date3)) %>% mutate(date3 = 0) %>% mutate(fecundity = 0) %>% 
+        # the main matrix
+        rbind(fitness %>% filter(trt==i) %>% arrange(date3)) %>%
+        # make last row
+        rbind(fitness %>% filter(trt == i) %>% filter(date3 == max(date3)) %>%  mutate(date3 = max(date3)+1) %>% mutate(fecundity = 0))
+
+      ## set the s and f coloumns to default values
+      submat$s = 1
+      submat$f = 0
+      
+      ## calculate s and f
+      for (j in 1:(dim(submat)[1]-1)) {
+         submat$s[j] <- (submat$cum_female[j+1] / submat$cum_female[j])
+         submat$f[j] <- submat$fecundity[j] #* submat$s[j]
+      }
+
+      ## begin the leslie matrix
+      leslie_mat <- matrix(data = c(unlist(submat$f[1:dim(submat)[1]])), nrow= 1)
+      leslie_mat[(n[1]+1):(n[2]+1)] <- (leslie_mat[(n[1]+1):(n[2]+1)] * mod)
+      
+      ## build in the diagonal
+      for (k in 1:(dim(submat)[1]-1)) {
+        leslie_mat <- rbind(leslie_mat, 
+                            matrix(c(rep(0,k-1),submat$s[k],rep(0,(dim(submat)[1]-k))), nrow=1)
+        )
+      }
+
+      ## the matrix
+
+      
+      ## calculate the first eigenvalue in the eigenvector of the Leslie matrix
+      eigenvalue_df <- eigenvalue_df %>% rbind(data.frame(vial = as.character(i), trt = as.character(submat$vial[1]), exp = as.factor(as.character(submat$date2[1])), fitness = as.numeric(eigen(leslie_mat)$values[1])))
+      
+    }
+    
+  ## add that row with the eigenvalue to a growing data frame
+  eigens <- eigens %>% rbind(eigenvalue_df %>% mutate(mod_death = (m), permuted_val = paste0(n[1],"_",n[2])))
+  }
+}
+
+for(k in names(table(list(eigens$mod_death)))) {
+
+    ## get rid of unnecessary rows  
+    eigensA <- eigens %>% filter(trt%in%subset_vec) %>% filter(permuted_val == "1_1") %>%droplevels()
+  
+  ## convert trt to a factor
+  eigensA$trt <- factor(eigensA$trt, levels = subset_vec)
+  
+  eigens2a <- eigensA %>% filter(mod_death == 1) %>% rename(unpermuted_fitness = fitness) %>% droplevels()
+  eigens2b <- eigensA %>% filter(mod_death == k) %>% rename(permuted_fitness = fitness) %>% droplevels()
+
+table(eigens2a$vial)
+  eigens3 <- eigens2a %>% inner_join(eigens2b, by="vial")
+  eigens3$unpermuted_fitness
+  
+  cortest <- cor.test(eigens3$unpermuted_fitness, eigens3$permuted_fitness, method = "spearman", exact=F)
+    print(paste0("Correlation test between observed fitness and when fitness is calculated from ",1/as.numeric(as.character(k)),"-fold reduction in fecundity values. N = ",dim(eigens3 %>% filter(unpermuted_fitness > 0 & permuted_fitness>0))[1]))
+  print(cortest)
+
+  colors <- data.frame(table(list(eigens3$trt.x))) %>% mutate(col = as.factor(c("red","red","red","black","purple","red","red","green",rep("blue",4),"cyan",rep("blue",2))))
+  eigens4 <- eigens3 %>% inner_join(colors, by=c("trt.x"="Var1"))
+
+  plotp = round(cortest$p.value,4)
+  plotrho = round(cortest$estimate,4)
+  plotlabel = paste0("p = ",plotp,"; rho = ",plotrho)
+  ## build the color palette for the plot
+  plot_colors <- eigens4$col
+
+  print(ggplot(eigens4, aes(unpermuted_fitness, permuted_fitness, color = col, fill=col)) + 
+     geom_point() +
+     scale_color_manual(values = c("black","blue","magenta","cyan","purple","red1"), name = NULL, labels = c("Axenic","LAB","B. subtilis","Gamma","5-sp","AAB")) + 
+     scale_fill_manual(values = c("black","blue","magenta","cyan","purple","red1"), name = NULL, labels = c("Axenic","LAB","B. subtilis","Gamma","5-sp","AAB")) + 
+     theme_cowplot() +
+     theme(legend.position = "bottom") +
+     xlab(paste0("observed fitness"))+
+     ylab(paste0("fecundity-permuted fitness"))+
+  	  annotate(geom="label", x= min(eigens4$unpermuted_fitness), y = min(eigens4$permuted_fitness), label = deparse(plotlabel),size=6, parse=T, hjust = 0, fill = NA,label.size=0) + 
+     stat_smooth(method = "lm", aes(unpermuted_fitness, permuted_fitness), inherit.aes = F)
+)
+ 
+}
+
+```
+
+## Figure S4
+```{r Figure_S4, exercise = F, warning =F, message = F, exercise.timelimit = 1000,eval = T}
+q = 1
+
+#print 1 plot with  the same survival in each line. each line is the age class that was permuted for survival
+xgroup = unlist(p$group[q])
+subset_vec = unlist(unname(p$vec[q]))
+rangevals <- c(1:7)
+
+for (n in c(1,.5,.1,.05,.01,.005,.001,.0001,.00001)) {
+  eigens <- data.frame(vial = factor(), trt = character(), exp = factor(), fitness = numeric(), mod_death = numeric())
+  m = 1
+  for (m in rangevals) {
+    eigenvalue_df <- data.frame(vial = character(), trt = character(), exp = factor(), fitness = numeric())
+    mod = n
+    age_class = m
+    subfitness <- fitness %>% filter(vial %in% subset_vec)
+    for(i in names(table(list(subfitness$trt)))) {
+    submat <- fitness %>% 
+      filter(trt==i) %>% 
+      filter(date3 == min(date3)) %>% 
+      mutate(date3 = 0) %>%
+      mutate(fecundity = 0) %>%
+      rbind(fitness %>% 
+              filter(trt==i) %>% 
+              arrange(date3)
+            ) %>%
+      rbind(fitness %>%
+              filter(trt == i) %>%
+              filter(date3 == max(date3)) %>% 
+              mutate(date3 = max(date3)+1) %>%
+              mutate(fecundity = 0)
+      )
+    submat$s = 1
+    submat$f = 0
+  
+    
+    for (j in 1:(dim(submat)[1]-1)) {
+       submat$s[j] <- (submat$cum_female[j+1] / submat$cum_female[j])
+       submat$f[j] <- submat$fecundity[j] #* submat$s[j]
+    }
+
+    leslie_mat <- matrix(data = c(unlist(submat$f[1:dim(submat)[1]])), nrow= 1)
+    leslie_mat[(m+1)] <- (leslie_mat[(m+1)] * mod)
+    
+    ## build in the diagonal
+    for (k in 1:(dim(submat)[1]-1)) {
+      leslie_mat <- rbind(leslie_mat, 
+                          matrix(c(rep(0,k-1),submat$s[k],rep(0,(dim(submat)[1]-k))), nrow=1)
+      )
+    }
+    
+    eigenvalue_df <- eigenvalue_df %>% rbind(data.frame(vial = as.character(i), trt = as.character(submat$vial[1]), exp = as.factor(as.character(submat$date2[1])), fitness = as.numeric(eigen(leslie_mat)$values[1])))
+  
+  }
+    
+    eigens <- eigens %>% rbind(eigenvalue_df %>% mutate(fitness = log(fitness)) %>% mutate(mod_death = (m)))
+  }
+  
+  eigens <- eigens %>% filter(trt%in%subset_vec) %>% droplevels()
+  eigens$trt <- factor(eigens$trt, levels = subset_vec)
+  eigens2 <- eigens %>% group_by(trt, mod_death) %>% summarize(meanfit = mean(fitness))
+  plot_colors <- colorRampPalette(c("red", "black"))
+
+  
+   for(i in rangevals) {
+      cat('\n')
+      print("######################################################")
+      print(paste0("These are the statistics for age class ",i," and survival divided by ",1/n, sep = ""))
+      
+      
+      eigen_stats <- eigens %>% filter(mod_death == (i)) %>% droplevels()
+      #print(str(eigen_stats))
+      #print(i)
+      kwoutput <- try(kruskal.test(eigen_stats$fitness~ eigen_stats$trt), silent = T)
+      captured_output <- capture.output(efg <- dunn.test(eigen_stats$fitness,eigen_stats$trt, method = "bh", table = F, kw = T))
+      if(kwoutput == "Error in kruskal.test.default(numeric(0), structure(integer(0), .Label = character(0), class = \"factor\")) : \n  all observations are in the same group\n") {
+        print(paste0("chi-sq statistic not significant"))
+      } else {
+        print(paste0("chi-sq statistic: ",round(kwoutput$statistic,2)))
+        print(paste0("df: ",length(table(eigen_stats$trt))-1))
+        print(paste0("p: ",signif(kwoutput$p.value,3)))      
+      }      
+      #print(i)
+    if(sum(efg$P.adjusted<0.05)>0) {
+        ghi <- cldList(comparison = efg$comparisons, p.value = efg$P.adjusted, threshold = 0.05, print.comp = F) %>% 
+        arrange(factor(Group, levels = subset_vec))
+        try(assign(x = paste0("es",i), value = as.vector(ghi$Letter)),T)
+      } else {
+        assign(x = paste0("es",i),value = rep("a",length(subset_vec)))
+      }
+      assign(x = paste0("estats",i), 
+                   value = eigen_stats %>% 
+                     group_by(trt) %>% 
+                     summarize(mean_fitness = mean(fitness)) %>% 
+                     arrange(factor(trt, levels = subset_vec)) %>%
+                     dplyr::select(mean_fitness) %>%
+                     unlist() %>% 
+                     unname()
+            )
+    } 
+  
+      eigens2$trt <- plyr::revalue(eigens2$trt, c("28n" = "atrn","30p" = "apan", "11c"="atrc","Gno" = "5sp","4d" = "apoc", "35u" = "aace","Ax" = "Ax","2b" = "lplc","13g" = "bsub","15h" = "ecok","75o" = "lplw","3c" = "lfrc", "1a" = "lbrc","70j" = "lfrk", "71k" = "lbga"))
+print(n)
+print(m)
+#  jpeg(h=7, w = 15, filename = paste0("fitness-permute-fecundity-group_",xgroup,"_",n,".jpg"), units = "in",res = 300)
+  print(ggplot(eigens2, aes(x = trt, y=meanfit,group = as.factor(mod_death), col = as.factor(mod_death), fill = as.factor(mod_death))) + 
+    	geom_step(aes(x = trt, y = meanfit)) + #, position = position_dodge(width = widthj), size = sizej) +
+   scale_color_manual(values = plot_colors(length(rangevals)),
+                     name = "Age class") +
+      coord_cartesian(ylim = c(-2,3)) +
+      ylab("log fitness") +
+      xlab("bacterial treatment") +
+      theme(legend.position = "bottom") +
+   guides(color = guide_legend(ncol = 5, byrow=T, reverse = T)) +
+      theme_cowplot() + 
+      theme(legend.position = "bottom", 
+            legend.text.align = 0,
+            legend.key.width = unit(.5,"in"), 
+            text = element_text(size = 12),
+            axis.text.x = element_text(angle = 90),
+            legend.justification = "center") + 
+   annotate(geom="label", x= c(1.05:(length(subset_vec)+0.05)), y= get(paste0("estats",rangevals[7]))+0.03, label = get(paste0("es",rangevals[7])),size=3, parse=T, hjust = 0, fill = NA,label.size=0)+
+	  annotate(geom="label", x= c(1.05:(length(subset_vec)+0.05)), y= get(paste0("estats",rangevals[6]))+0.03, label = get(paste0("es",rangevals[6])),size=3, parse=T, hjust = 0, fill = NA,label.size=0)+
+ 	  annotate(geom="label", x= c(1.05:(length(subset_vec)+0.05)), y= get(paste0("estats",rangevals[5]))+0.03, label = get(paste0("es",rangevals[5])),size=3, parse=T, hjust = 0, fill = NA,label.size=0)+
+  	  annotate(geom="label", x= c(1.05:(length(subset_vec)+0.05)), y= get(paste0("estats",rangevals[4]))+0.03, label = get(paste0("es",rangevals[4])),size=3, parse=T, hjust = 0, fill = NA,label.size=0)+
+  	  annotate(geom="label", x= c(1.05:(length(subset_vec)+0.05)), y= get(paste0("estats",rangevals[3]))+0.03, label = get(paste0("es",rangevals[3])),size=3, parse=T, hjust = 0, fill = NA,label.size=0)+
+  	  annotate(geom="label", x= c(1.05:(length(subset_vec)+0.05)), y= get(paste0("estats",rangevals[2]))+0.03, label = get(paste0("es",rangevals[2])),size=3, parse=T, hjust = 0, fill = NA,label.size=0)+
+  	  annotate(geom="label", x= c(1.05:(length(subset_vec)+0.05)), y= get(paste0("estats",rangevals[1]))+0.03, label = get(paste0("es",rangevals[1])),size=3, parse=T, hjust = 0, fill = NA,label.size=0)
+  )
+#    dev.off()
+}
+```
+
+## Figure S5
+### Figure S5A
+```{r Figure_S5ac, exercise = F, warning =F, message = F, exercise.timelimit = 1000}
+
+q=2
+xgroup = unlist(p$group[q])
+subset_vec = unlist(unname(p$vec[q]))
+n = c(1,1)
+rangevals <- c(1, .5,.1,.05, .01, 0.005,.001,.0005,0.0001,0.00001)
+eigens <- data.frame(vial = factor(), trt = character(), exp = factor(), fitness = numeric(), mod_death = numeric())
+
+for (m in rangevals) {
+  eigenvalue_df <- data.frame(vial = character(), trt = character(), exp = factor(), fitness = numeric())
+  distance = n
+  mod = m
+  subfitness <- fitness %>% filter(vial %in% subset_vec)
+  for(i in names(table(list(subfitness$trt)))) {
+  submat <- fitness %>% 
+    filter(trt==i) %>% 
+    filter(date3 == min(date3)) %>% 
+    mutate(date3 = 0) %>%
+    mutate(fecundity = 0) %>%
+    rbind(fitness %>% 
+            filter(trt==i) %>% 
+            arrange(date3)
+          ) %>%
+    rbind(fitness %>%
+            filter(trt == i) %>%
+            filter(date3 == max(date3)) %>% 
+            mutate(date3 = max(date3)+1) %>%
+            mutate(fecundity = 0)
+    )
+  submat$s = 1
+  submat$f = 0
+
+  for (j in 1:(dim(submat)[1]-1)) {
+     submat$s[j] <- (submat$cum_female[j+1] / submat$cum_female[j])
+     submat$f[j] <- submat$fecundity[j] #* submat$s[j]
+  }
+  submat
+  leslie_mat <- matrix(data = c(unlist(submat$f[1:dim(submat)[1]])), nrow= 1)
+  if (n[1]>1) {
+    for (k in 1:(n[1]-1)) {
+      leslie_mat <- rbind(leslie_mat,
+                          matrix(c(rep(0,k-1),submat$s[k],rep(0,(dim(submat)[1]-k))), nrow=1)
+      )
+    } 
+  }
+  for (k in n[1]:min(n[2],(dim(submat)[1]-1))) {
+    leslie_mat <- rbind(leslie_mat, 
+                        matrix(c(rep(0,k-1),submat$s[k]*mod,rep(0,(dim(submat)[1]-k))), nrow=1)
+    )
+  }
+  if(n[2] < (dim(submat)[1]-1)) {
+    for(k in (n[2]+1):(dim(submat)[1]-1)) {
+       leslie_mat <- rbind(leslie_mat,
+                            matrix(c(rep(0,k-1),submat$s[k],rep(0,(dim(submat)[1]-k))), nrow=1)
+        )
+    }
+  }
+  leslie_mat
+  eigenvalue_df <- eigenvalue_df %>% rbind(data.frame(vial = as.character(i), trt = as.character(submat$vial[1]), exp = as.factor(as.character(submat$date2[1])), fitness = as.numeric(eigen(leslie_mat)$values[1])))
+
+}
+  eigens <- eigens %>% rbind(eigenvalue_df %>% mutate(mod_death = (m)))
+}
+  
+eigens <- eigens %>% filter(trt%in%subset_vec) %>% droplevels()
+eigens$trt <- factor(eigens$trt, levels = subset_vec)
+eigens2 <- eigens %>% group_by(trt, mod_death) %>% summarize(meanfit = mean(fitness))
+plot_colors <- colorRampPalette(c("red", "black"))
+
+for(i in rangevals) {
+  eigen_stats <- eigens %>% filter(mod_death == (i)) %>% droplevels()
+  print(paste0("KW test when survival in age class 1 is reduced by a factor of ",1/as.numeric(as.character(i))))
+  print(kruskal.test(eigen_stats$fitness ~ eigen_stats$trt))
+}
+
+print(ggplot(eigens2, aes(x = trt, y=meanfit,group = as.factor(mod_death), col = as.factor(mod_death), fill = as.factor(mod_death))) + 
+    	geom_step(aes(x = trt, y = meanfit)) +
+   scale_color_manual(values = plot_colors(length(rangevals)),
+                     name = "survival reduced to") +
+      ylab("fitness") +
+      xlab("bacterial treatment") +
+      theme(legend.position = "bottom") +
+   guides(color = guide_legend(ncol = 5, byrow=T, reverse = T)) +
+      theme_cowplot() + 
+      theme(legend.position = "bottom", 
+            legend.text.align = 0,
+            legend.key.width = unit(.5,"in"), 
+            text = element_text(size = 12),
+            legend.justification = "center") 
+)
+```
+
+### Figure S5B
+```{r Figure_S5ec, exercise = F, warning =F, message = F, exercise.timelimit = 1000}
+q=3
+  xgroup = unlist(p$group[q])
+  subset_vec = unlist(unname(p$vec[q]))
+  rangevals <- c(1, .5,.1,.05, .01, 0.005,.001,.0005,0.0001,0.00001)
+  n = c(1,1)
+  
+  eigens <- data.frame(vial = factor(), trt = character(), exp = factor(), fitness = numeric(), mod_death = numeric())
+  for (m in rangevals) {
+    eigenvalue_df <- data.frame(vial = character(), trt = character(), exp = factor(), fitness = numeric())
+    distance = n
+    mod = m
+    subfitness <- fitness %>% filter(vial %in% subset_vec)
+    for(i in names(table(list(subfitness$trt)))) {
+    submat <- fitness %>% 
+      filter(trt==i) %>% 
+      filter(date3 == min(date3)) %>% 
+      mutate(date3 = 0) %>%
+      mutate(fecundity = 0) %>%
+      rbind(fitness %>% 
+              filter(trt==i) %>% 
+              arrange(date3)
+            ) %>%
+      rbind(fitness %>%
+              filter(trt == i) %>%
+              filter(date3 == max(date3)) %>% 
+              mutate(date3 = max(date3)+1) %>%
+              mutate(fecundity = 0)
+      )
+    submat$s = 1
+    submat$f = 0
+  
+    for (j in 1:(dim(submat)[1]-1)) {
+       submat$s[j] <- (submat$cum_female[j+1] / submat$cum_female[j])
+       submat$f[j] <- submat$fecundity[j] #* submat$s[j]
+    }
+    submat
+    leslie_mat <- matrix(data = c(unlist(submat$f[1:dim(submat)[1]])), nrow= 1)
+    if (n[1]>1) {
+      for (k in 1:(n[1]-1)) {
+        leslie_mat <- rbind(leslie_mat,
+                            matrix(c(rep(0,k-1),submat$s[k],rep(0,(dim(submat)[1]-k))), nrow=1)
+        )
+      } 
+    }
+    for (k in n[1]:min(n[2],(dim(submat)[1]-1))) {
+      leslie_mat <- rbind(leslie_mat, 
+                          matrix(c(rep(0,k-1),submat$s[k]*mod,rep(0,(dim(submat)[1]-k))), nrow=1)
+      )
+    }
+    if(n[2] < (dim(submat)[1]-1)) {
+      for(k in (n[2]+1):(dim(submat)[1]-1)) {
+         leslie_mat <- rbind(leslie_mat,
+                              matrix(c(rep(0,k-1),submat$s[k],rep(0,(dim(submat)[1]-k))), nrow=1)
+          )
+      }
+    }
+    leslie_mat
+    eigenvalue_df <- eigenvalue_df %>% rbind(data.frame(vial = as.character(i), trt = as.character(submat$vial[1]), exp = as.factor(as.character(submat$date2[1])), fitness = as.numeric(eigen(leslie_mat)$values[1])))
+  
+  }
+    eigens <- eigens %>% rbind(eigenvalue_df %>% mutate(mod_death = (m)))
+  }
+  eigens <- eigens %>% filter(trt%in%subset_vec) %>% droplevels()
+  eigens$trt <- factor(eigens$trt, levels = subset_vec)
+  eigens2 <- eigens %>% group_by(trt, mod_death) %>% summarize(meanfit = mean(fitness))
+  plot_colors <- colorRampPalette(c("red", "black"))
+  
+  for(i in rangevals) {
+    eigen_stats <- eigens %>% filter(mod_death == (i)) %>% droplevels()
+    efg <- wilcox.test(eigen_stats$fitness ~ eigen_stats$trt)
+    print(paste0("Wilcoxon test when survival in age class 1 is reduced by a factor of ",1/as.numeric(as.character(i))))
+    print(efg)
+
+  }
+  
+  print(ggplot(eigens2, aes(x = trt, y=meanfit,group = as.factor(mod_death), col = as.factor(mod_death), fill = as.factor(mod_death))) + 
+    	geom_step(aes(x = trt, y = meanfit)) + 
+   scale_color_manual(values = plot_colors(length(rangevals)),
+                     name = "survival reduced to") +
+      ylab("fitness") +
+      xlab("bacterial treatment") +
+      theme(legend.position = "bottom") +
+   guides(color = guide_legend(ncol = 5, byrow=T, reverse = T)) +
+      theme_cowplot() + 
+      theme(legend.position = "bottom", 
+            legend.text.align = 0,
+            legend.key.width = unit(.5,"in"), 
+            text = element_text(size = 12),
+           legend.justification = "center") 
+  )
+
+
+```
+
+## MGWA
+```{r MGWA, exercise = F, warning =F, message = F, exercise.timelimit = 10000}
+
+parsed_data <- FormatAfterOrtho("https://raw.githubusercontent.com/johnchaston/dros_fit/data/groupsWP_052819.txt", format="groups")
+
+pheno_data <- fitness_formgwa %>% filter(mod_death == 1) %>% filter(trt!="16i") %>% inner_join(lookup_code, by = c("trt"="code2")) %>% droplevels() %>% select(-fullname, -code1, -code3)
+
+  ## show the data are normal
+print("Show the data are normal")
+shapiro.test(pheno_data$fitness)
+
+  ## Run the MGWA
+print("Run the MGWA using a linear mixed effects model, with fitness as the response variable, bacterial species as a fixed effect, and experimental replicate as a random effect. Also, uses enough principal coordinates to represent half of the population structure in the data.")
+
+mcl_matrix_lmer <- AnalyzeOrthoMCL(parsed_data, 
+						 pheno_data, 
+						 model = 'lmeR1', 
+						 species_name = 'new_filename',  
+						 resp = 'fitness',
+						 rndm1 = "exp",
+						 princ_coord = 0.5)
+QQPlotter(mcl_matrix_lmer)
+
+#joined_matrix_lmer <- JoinRepSeq(parsed_data, '~/Dropbox/Dietary Pref 2019/MGWA/precompliantfasta2/', mcl_matrix_lmer, fastaformat = 'old')
+#WriteMCL(joined_matrix_lmer,"~/Dropbox/tradeoffs2/Oct2016-monoassociated_fecundity/redo2020/MGWA/wilcox_results_fitness_sep20_lmer_joined.csv")
+mcl_matrix_lmer
+```
