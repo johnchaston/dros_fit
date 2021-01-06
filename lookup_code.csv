@@ -1,23 +1,23 @@
-﻿fullname,code1,code2,code3
-Acetobacter tropicalis DmCS_006,atrc,11c,11c
-Bacillus subtilis subsp. subtilis str.168,bsub,13g,13g
-Escherichia coli str. K-12 substr. MG1655,ecok,15h,15h
-Pseudomonas putida F1,pput,16i,16i
-Lactobacillus brevis DmCS_003,lbrc,1a,1a
-Acetobacter tropicalis NBRC 101654,atrn,28n,28n
-Lactiplantibacillus plantarum DmCS_001,lplc,2b,2b
-Acetobacter pasteurianus NBRC 101655,apan,30p,3p
-Acetobacter aceti NBRC 14818,aace,35u,35u
-Lactobacillus fructivorans DmCS_002,lfrc,3c,3c
-Acetobacter pomorum DmCS_004,apoc,4d,4d
-Lactobacillus fructivorans KCTC 3543,lfrk,70j,7j
-Lactobacillus brevis subsp. gravesensis ATCC 27305,lbga,71k,71k
-Lactobacillus plantarum WCFS1,lplw,75o,75o
-5-species mix,gno,Gno,Gno
-Axenic,ax,Ax,Ax
-A. pasteurianus + gluconate dehydrogenase,GNDH,Gluconate DeH,GNDH
-A. pasteurianus + glucose dehydrogenase,GDH,Glucose DeH,GDH
-A. pasteurianus + empty vector,PVEC,empty vector,PVEC
-A. pasteurianus + S-oxidoreductase,SDR,oxidoreductase,SDR
-E. coli BW25113,7636,7636,7636
-E. coli metH mutant,10862,10862,10862
+﻿fullname,code1,code2,code3,new_filename
+Acetobacter tropicalis DmCS_006,atrc,11c,11c,aabi
+Bacillus subtilis subsp. subtilis str.168,bsub,13g,13g,aabk
+Escherichia coli str. K-12 substr. MG1655,ecok,15h,15h,aaan
+Pseudomonas putida F1,pput,16i,16i,aabg
+Lactobacillus brevis DmCS_003,lbrc,1a,1a,aaad
+Acetobacter tropicalis NBRC 101654,atrn,28n,28n,aaas
+Lactiplantibacillus plantarum DmCS_001,lplc,2b,2b,aaac
+Acetobacter pasteurianus NBRC 101655,apan,30p,3p,aaam
+Acetobacter aceti NBRC 14818,aace,35u,35u,aabo
+Lactobacillus fructivorans DmCS_002,lfrc,3c,3c,aabl
+Acetobacter pomorum DmCS_004,apoc,4d,4d,aabe
+Lactobacillus fructivorans KCTC 3543,lfrk,70j,7j,aaae
+Lactobacillus brevis subsp. gravesensis ATCC 27305,lbga,71k,71k,aabc
+Lactobacillus plantarum WCFS1,lplw,75o,75o,aaab
+5-species mix,gno,Gno,Gno,nothing
+Axenic,ax,Ax,Ax,nothing
+A. pasteurianus + gluconate dehydrogenase,GNDH,Gluconate DeH,GNDH,nothing
+A. pasteurianus + glucose dehydrogenase,GDH,Glucose DeH,GDH,nothing
+A. pasteurianus + empty vector,PVEC,empty vector,PVEC,nothing
+A. pasteurianus + S-oxidoreductase,SDR,oxidoreductase,SDR,nothing
+E. coli BW25113,7636,7636,7636,nothing
+E. coli metH mutant,10862,10862,10862,nothing
