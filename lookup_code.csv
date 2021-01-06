@@ -15,3 +15,9 @@ Lactobacillus brevis subsp. gravesensis ATCC 27305,lbga,71k,71k
 Lactobacillus plantarum WCFS1,lplw,75o,75o
 5-species mix,gno,Gno,Gno
 Axenic,ax,Ax,Ax
+A. pasteurianus + gluconate dehydrogenase ,GNDH,GNDH,GNDH
+A. pasteurianus + glucose dehydrogenase,GDH,GDH,GDH
+A. pasteurianus + empty vector,PVEC,PVEC,PVEC
+A. pasteurianus + S-oxidoreductase,SDR,SDR,SDR
+E. coli BW25113,7636,7636,7636
+E. coli metH mutant,10862,10862,10862
